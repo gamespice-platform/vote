@@ -1,5 +1,3 @@
-# dot-vote
-
 Let players, rather than a rotation, decide what plays next: games, maps or modes. Rock the vote, nominations, per-choice time limits, a ballot and the change at the end of it. It is the familiar `rtv`, `nominate`, `mapchooser`, `timeleft`, `extend` shape, with every part a setting, so a community changes a number instead of forking it.
 
 ## Install
