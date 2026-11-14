@@ -1,21 +1,15 @@
-This is the **vote** asset for TMC's **Dot** collection. It is what you add when the players, rather than the rotation, should decide what runs next.
+# dot-vote
 
-This collection of assets provides modular building blocks for creating games and applications within the TMC ecosystem, ensuring consistency and interoperability across all `dot-*` assets. This includes core functionality, networking, authentication, cloud integration, and more.
+Let players, rather than a rotation, decide what plays next: games, maps or modes. Rock the vote, nominations, per-choice time limits, a ballot and the change at the end of it. It is the familiar `rtv`, `nominate`, `mapchooser`, `timeleft`, `extend` shape, with every part a setting, so a community changes a number instead of forking it.
 
-**These assets are COMPLETELY OPEN SOURCE**. You are free to use, modify, and distribute them under the terms of the MIT license. The only thing not open source is the back-end web infrastructure. So if you opt into using your own authentication backend instead of integrating with TMC, you will need to build and integrate your own back-end infrastructure.
+## Install
 
-## From Maintainer & WARNING
-This asset, along with all the others, was built initially with **Claude Code** and will continue to be maintained and extended using it. This is because I (`gamemann`) cannot build the entire TMC platform alone (I wish I could lol).
+1. Get [Godot 4.7](https://godotengine.org/download).
+2. Either use [dot-bootstrap](https://github.com/modcommunity/dot-bootstrap), which clones every project and links the addons, or copy `addons/dot_vote/` and [dot-core](https://github.com/modcommunity/dot-core)'s `addons/dot_core/` into your project and enable dot-vote in *Project > Project Settings > Plugins*.
 
-**Please treat this as partially tested.** Every asset has its own headless test suite and those suites pass, but very little of this has been in front of real players yet. Expect rough edges, and please report anything you run into.
+dot-core is the only dependency. [dot-server](https://github.com/modcommunity/dot-server) and [dot-map](https://github.com/modcommunity/dot-map) are optional and are reached without being imported.
 
-I intend on reviewing code, testing, and editing documentation regularly. If you're interested in helping out, please let me know!
-
-## Voting For What Plays Next
-
-An asset that allows users to vote for what plays next, whether games, maps or modes, and every part of it is a setting.
-
-Rock the vote, nominations, per-choice time limits, a ballot, and the change at the end of it. The shape every server in this genre has had since 2005 (`rtv`, `nominate`, `mapchooser`, `timeleft`, `extend`), rebuilt so that a community that wants it to work differently changes a number rather than forking it.
+## Use
 
 ```gdscript
 var votes := DotVoteDirector.new()
@@ -30,43 +24,40 @@ votes.begin(&"lobby")        # what is running now
 votes.advance(delta)
 ```
 
-That is the whole integration. Everything else is configuration.
+Everything else is configuration.
 
 ## What it does
 
-| | |
+| Feature | Detail |
 | --- | --- |
-| **Rock the vote** | A fraction of the players, with a minimum player count, a delay at the start of every map, idempotent per player, and votes withdrawn when their owner disconnects. |
-| **Nominations** | Per-player caps, a total cap, seconding (so "most nominated" means something), admin bypass, and reserved places on the ballot so three organised players cannot decide every map. |
-| **Time limits** | In seconds, in rounds, in score, or all three, **per choice**, so a forty-minute surf map and a ten-minute bhop map are not forced under one number. Multiple warnings, extending with a cap. |
-| **The end-of-map vote** | One switch (`end_vote`). The ballot opens a fixed lead before the end, or at a fraction of the limit, with an optional counted-down warning. "Extend" adds a configurable amount of time, rounds and score, and leaves the ballot once the extensions are used up. |
-| **The ballot** | Up to N options, filled five ways, with "extend", "don't change" and "no vote" as options a server can turn on or off, placed first or last, optionally shuffled, and custom maps marked. Opens a configurable lead time *before* the map ends, so the change happens on time. |
-| **Counting** | Plurality, approval, instant runoff, or a majority runoff. Quorums, weighted ballots, and five tie-breaks, four of which a player watching can predict. |
-| **Cooldowns** | In plays or in wall-clock minutes, per choice, clamped against the pool so a long cooldown on a short rotation cannot exclude everything. |
-| **Applying** | Immediately, at the end of the round, or when the clock runs out — separately for the end-of-map ballot and for a rock-the-vote one — with a delay so players can read the result. |
-| **Countdowns and cues** | A per-second countdown signal before a ballot and before a runoff, and sound cue ids for the start, the end, the warning and each second. Ids only: the host plays them, through dot-audio or anything else. |
-| **Commands** | `nominate`, `rtv`, `votefor`, `timeleft`, `nextmap`, `revote`, `extend`, `endvote`, `setnextmap`, `nominate_addmap`, `forcertv`, `votereload`, and more, on a dot-server console and in chat. Every name configurable; the admin ones need the `changemap` flag. |
-| **Asking** | Whether a player may nominate and why not, what may be nominated, what is excluded, what is nominated and by whom, whether the end vote has finished, whether a vote could start, whether a choice is official. |
+| Rock the vote | A fraction of players, a minimum player count, a delay at the start of each map, one vote per player, withdrawn when they disconnect. |
+| Nominations | Per-player and total limits, seconding, admin bypass, and reserved ballot places so a few organised players cannot decide every map. |
+| Time limits | Seconds, rounds, score, or all three, per choice, with warnings and extending. |
+| End-of-map vote | One switch (`end_vote`). The ballot opens a set lead before the end, with an optional countdown. "Extend" adds time, rounds and score. |
+| The ballot | Options filled several ways, with "extend", "don't change" and "no vote" switchable, placed first or last, optionally shuffled, custom maps marked. |
+| Counting | Plurality, approval, instant runoff or majority runoff. Quorums, weighted ballots, tie-breaks. |
+| Cooldowns | In plays or minutes, per choice, kept from excluding the whole pool. |
+| Applying | Immediately, at round end or when the clock runs out, with a delay so players can read the result. |
+| Cues | Countdown signals and sound cue ids. The host plays them. |
+| Commands | `nominate`, `rtv`, `votefor`, `timeleft`, `nextmap`, `revote`, `extend`, `endvote`, `setnextmap`, `nominate_addmap`, `forcertv`, `votereload` and more, on a dot-server console and in chat. Names are configurable; admin ones need the `changemap` flag. |
 
 ## The pieces
 
-| | |
+| Class | What it is |
 | --- | --- |
-| `DotVoteRules` | Every policy decision, as one `DotConfig`. Layers `defaults < file < DOT_VOTE_* < --vote-*`, and enum settings are written **by name** (`method: instant_runoff`). |
-| `DotVoteChoice` | One thing that can be voted for: an id, a name, and the few facts a ballot needs: player counts, its own time limit, its own cooldown and its weight. |
-| `DotVoteSource` | Where the choices come from and what "play this" means. The one seam. |
-| `DotVoteDirector` | The `Node` that joins them, driven by one `advance(delta)` per tick. |
-| `DotVoteClock` | The limit, the warnings, the extends and the rock-the-vote. |
-| `DotVoteClockView` | The clock as a client shows it: a state a server sends when it changes, counted down in between, and empty when there is no limit. |
-| `DotVoteBallot` | The open ballot and the four counting methods. |
-| `DotVoteBallotView` / `DotVoteBallotFeed` | The ballot as a client draws it (options in the order a typed number indexes, counts, who chose what, how to choose) and a feed that sends it only when it changed. Still no wire format: the dictionary rides whatever the host has, and dot-ui's `DotBallotPanel` draws it. |
+| `DotVoteRules` | Every policy decision, as one `DotConfig`: defaults, then file, then `DOT_VOTE_*`, then `--vote-*`. Enum settings are written by name (`method: instant_runoff`). |
+| `DotVoteChoice` | One thing to vote for: id, name, player counts, its own time limit, cooldown and weight. |
+| `DotVoteSource` | Where choices come from and what "play this" means. |
+| `DotVoteDirector` | The `Node` that joins them, driven by `advance(delta)`. |
+| `DotVoteClock` | The limit, warnings, extends and rock-the-vote. |
+| `DotVoteClockView` | The clock as a client shows it. |
+| `DotVoteBallot` | The open ballot and the counting methods. |
+| `DotVoteBallotView`, `DotVoteBallotFeed` | The ballot as a client draws it, and a feed that sends it only when it changed. [dot-ui](https://github.com/modcommunity/dot-ui)'s `DotBallotPanel` draws it. |
 | `DotVoteNominations` | What players have asked for, in order. |
-| `DotVoteHistory` | What has been played, and what is still on cooldown. |
-| `DotVoteResult` | What was decided, and **how**, including which tie-break, so the announcement can explain itself. |
+| `DotVoteHistory` | What has been played and what is on cooldown. |
+| `DotVoteResult` | What was decided, and how, including which tie-break. |
 
-## Pointing it at something
-
-Three sources ship with it, and none of them names a class outside dot-core:
+## Choices
 
 ```gdscript
 DotVoteGameSource.of(server.games)          # dot-server's games
@@ -74,40 +65,41 @@ DotVoteMapSource.of(catalogue, session)     # dot-map's maps
 DotVoteListSource.of(my_choices)            # anything else, with a Callable
 ```
 
-A list that grows while the server runs (maps or courses delivered after boot) is better given as a function than copied in: `source.entries_fn = func() -> Array: return my_catalogue()` is read again when a map begins and before every ballot, so nothing has to be refreshed by hand. It returns `DotVoteChoice`s, `[id, name]` pairs or bare ids.
+A list that changes while the server runs is better given as a function: `source.entries_fn = func() -> Array: return my_catalogue()` is read again when a map begins and before every ballot. It returns `DotVoteChoice`s, `[id, name]` pairs or bare ids.
 
-A `DotVoteListSource` can also offer the maps a player subscribed to: `source.follow_content(DotContentIndex.shared(), PackedStringArray(["*"]))` merges the index's `map` entries for its current session (solo only; an online index shows none), accepts the listed `map_kind`s (empty means none, `"*"` all), lets the game's own ids win, and labels each choice `Name [Pack]` through `DotVoteChoice.label()`. It needs only dot-core. A server whose maps.yml lists only some maps sets `source.in_rotation_fn` (`func(id) -> bool`) and optionally `rotation_order_fn` (`func() -> Array` of ids): both apply to every choice the source offers, merged pack maps included, so an unlisted map is never on the ballot, refused by `nominate` and never drawn (API level 12).
+`source.follow_content(DotContentIndex.shared(), PackedStringArray(["*"]))` adds the maps a player subscribed to (solo only). A server whose `maps.yml` lists only some maps sets `source.in_rotation_fn` so an unlisted map is never on the ballot or nominated.
 
-The two integrations are duck-typed, so this addon installs in a project that has never heard of dot-server or dot-map. Per-choice settings live in the thing's own metadata, so a game's time limit is written beside the game:
+Per-choice settings live in the thing's own metadata:
 
 ```yaml
-# content/arena/game.yml
+# content/fc/game.yml
 metadata:
   vote:
     time_limit_sec: 2400
     weight: 2.0
 ```
 
-A source that cannot change anything is legitimate: the director runs the whole vote and emits `change_due` for the host to act on, which is what a client mirroring a server's ballot does.
+A source that cannot change anything is fine: the director runs the vote and emits `change_due` for the host to act on.
 
-## Configuring it
+## Settings
+
+Written as yml, JSON, environment or command line. A selection:
 
 ```yaml
-trigger: time_limit          # round_end holds a time or score ballot until the round ends;
-                             # manual: the game opens the scheduled ballot, rock the vote still works
+trigger: time_limit          # round_end, or manual
 duration_sec: 1800
-end_vote: true               # a vote for the next map when this one runs out
+end_vote: true
 vote_lead_sec: 120           # the ballot opens two minutes before the end
-vote_warning_sec: 10         # after a ten-second countdown
+vote_warning_sec: 10
 warn_at_sec: "300,60,30"
 
-include_extend: true         # "extend this map" is on the ballot
-extend_seconds: 900          # by fifteen minutes
-max_extends: 2               # at most twice
+include_extend: true
+extend_seconds: 900
+max_extends: 2
 
 rtv_fraction: 0.6
 rtv_min_players: 1
-rtv_delay_sec: 120           # no rtv in the first two minutes
+rtv_delay_sec: 120
 
 max_options: 6
 nomination_slots: 4
@@ -122,9 +114,9 @@ apply: end_of_round
 apply_delay_sec: 5
 ```
 
-More than ninety settings, and the self-test fails if any one of them is read by nothing. [docs/parity.md](docs/parity.md) maps every setting, command and hook of the long-standing community map-chooser plugins onto these, row by row.
+An operator's file lives in `cfg/addons/dot_vote/vote.yml`, with `cfg/server/addons/dot_vote/` layered over it. Defaults you can see in code: `max_options` 6, `nomination_slots` 4, `max_extends` 3. [docs/parity.md](docs/parity.md) maps the settings, commands and hooks of the long-standing community map-chooser plugins onto these.
 
-A game that builds its rules in code layers an operator's file over them in one call — its own defaults, then the running game's `game.yml` metadata, then the file, then `DOT_VOTE_*`, then `--vote-*`:
+A game that builds its rules in code can layer an operator's file over them:
 
 ```gdscript
 var rules := my_default_rules()
@@ -136,32 +128,12 @@ var layered := rules.layer_over_defaults(
 
 A result that does not validate is refused whole, and the game keeps its own defaults.
 
-An operator's yml lives in `cfg/addons/dot_vote/vote.yml` (and `map_vote.yml`), with `cfg/server/addons/dot_vote/` over it: `rules.load_cfg("vote.yml")` reads both, then `DOT_VOTE_*` and `--vote-*`. The old flat `cfg/vote.yml` is still read, with one WARN, until 2026-12-31 (`DotCfgLegacy`); when the new file exists it wins whole.
+## Testing
 
-## Validating it
+Import the project once, then run `examples/vote_selftest.tscn` headless with Godot. It runs against a real `DotGameManager` and `DotMapCatalogue` when dot-server and dot-map are linked in. Further notes: [docs/design.md](docs/design.md), [docs/history.md](docs/history.md).
 
-```bash
-godot --headless --path . --import
-find . -name '*.gd' -not -path './.godot/*' | while read f; do
-    godot --headless --path . --check-only --script "res://${f#./}"
-done
-godot --headless --path . res://examples/vote_selftest.tscn
-```
+## Status and licence
 
-`vote_selftest` covers this addon. The last two sections run this addon against a real `DotGameManager` and a real `DotMapCatalogue` and change what they are running, because "the two ends have never met" is how the expensive bugs in this family start.
+Part of the TMC **dot-\*** family of Godot addons. Written with Claude Code and maintained by `gamemann`. Every addon has headless tests, but little of this has been played by real users yet, so expect rough edges and please [open an issue](https://github.com/modcommunity/dot-vote/issues) when you hit one.
 
-## Dependencies
-
-**dot-core** (API level 16 or later, for `DotAddonConfig.apply_file` and `DotCommandNames`), and nothing else. dot-server and dot-map are optional and are reached by duck typing.
-
-```bash
-ln -s ../../dot-core/addons/dot_core addons/dot_core
-
-# optional, and only so the self-test can run the integrations for real
-ln -s ../../dot-map/addons/dot_map addons/dot_map
-ln -s ../../dot-server/addons/dot_server addons/dot_server
-```
-
-## Licence
-
-MIT. See [LICENSE](LICENSE).
+MIT licence, see [LICENSE](LICENSE). The only closed part of the TMC platform is the web back end; you can use your own instead of TMC's.
