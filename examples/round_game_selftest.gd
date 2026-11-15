@@ -1,11 +1,8 @@
 extends Node
 
-## Proves [DotVoteRoundGame], the next-map vote every round-based game used to copy: the ballot opens once, in the last round only,
+## Proves [DotVoteRoundGame], the next-map vote every round-based game had its own copy of: the ballot opens once, in the last round only,
 ## applies at the round's end, waits out hibernation, and a game's names (channel, noun, kinds, commands) reach it.
-##
-## [codeblock]
-## godot --headless --path . res://examples/round_game_selftest.tscn
-## [/codeblock]
+## Run: godot --headless --path . res://examples/round_game_selftest.tscn
 
 ## A game's shim: names only.
 class _Game extends DotVoteRoundGame:

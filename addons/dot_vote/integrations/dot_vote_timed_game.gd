@@ -1,14 +1,9 @@
 class_name DotVoteTimedGame
 extends Node
 
-## The vote of a game that runs on a clock, not on rounds: [DotVoteDirector] over a source of the server's maps, with what every such game
-## copied once here instead: the director and its callbacks, the ballot feed, rules layered under the server owner's files, `!vote`, the
-## signals a host relays to clients, and the clock view that tells a client when its own count would be wrong. A game extends this, sets
-## [member channel], [member metadata_key], [member command_names], [member noun] and [member config_path] in [code]_init[/code], and overrides:
-## [method _rules] (its defaults, usually a TIME_LIMIT), [method _make_source] (when its choices are not a list), [method _configure_director]
-## (anything else the director needs) and [method _voters].
-##
-## For a game with rounds, extend [DotVoteRoundGame] instead.
+## The vote of a game on a clock, not rounds (for rounds extend [DotVoteRoundGame]): [DotVoteDirector] over a source of the server's maps, with the director and its callbacks, the ballot feed, rules layered under the server owner's files,
+## `!vote`, the signals a host relays to clients, and the clock view that tells a client when its own count would be wrong. A game extends this, sets [member channel], [member metadata_key], [member command_names], [member noun] and
+## [member config_path] in [code]_init[/code], and overrides [method _rules] (its defaults, usually a TIME_LIMIT), [method _make_source] (when its choices are not a list), [method _configure_director] and [method _voters].
 
 ## The log channel, e.g. "delivery.vote".
 var channel: String = "dot_vote.timed_game"

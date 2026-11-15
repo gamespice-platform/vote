@@ -1,13 +1,9 @@
 class_name DotVoteRoundGame
 extends Node
 
-## The next-map vote of a round-based game: [DotVoteDirector] over a [DotVoteListSource] of the server's maps, with the
-## game's half (WHEN the ballot opens) here once instead of copied into every game. A game extends this, sets [member channel],
-## [member metadata_key], [member config_path] and [member command_names] in [code]_init[/code], overrides [method _default_kinds]
-## for the Workshop `map_kind`s it plays, and may override [method _rules] for its own defaults.
-##
-## A ballot opens [member open_after_sec] into the LAST round on a map ([member due_fn]) and applies at its end. `trigger` is
-## MANUAL because ROUND_END applies a round late. Server side only: a client draws the notice from [member ballot_fn].
+## The next-map vote of a round-based game: [DotVoteDirector] over a [DotVoteListSource] of the server's maps, with the game's half (WHEN the ballot opens) here once. A game extends this, sets [member channel],
+## [member metadata_key], [member config_path] and [member command_names] in [code]_init[/code], overrides [method _default_kinds] for the Workshop `map_kind`s it plays, and may override [method _rules].
+## A ballot opens [member open_after_sec] into the LAST round on a map ([member due_fn]) and applies at its end; `trigger` is MANUAL because ROUND_END applies a round late. Server side only: a client draws the notice from [member ballot_fn].
 
 ## The dot-vote API level at which the director opens a rocked vote itself under MANUAL.
 const RTV_OPENS_IN_DIRECTOR_LEVEL := 2

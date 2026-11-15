@@ -2,10 +2,7 @@ extends Node
 
 ## Proves [DotVoteTimedGame], the vote every game on a clock copied: the ballot opens by dot-vote's own clock, the winner reaches the host,
 ## the director's signals and the clock reach the host's relay, and a game's names, rules and hooks shape it.
-##
-## [codeblock]
-## godot --headless --path . res://examples/timed_game_selftest.tscn
-## [/codeblock]
+## Run: godot --headless --path . res://examples/timed_game_selftest.tscn
 
 ## A game's shim: names and rules only.
 class _Game extends DotVoteTimedGame:
