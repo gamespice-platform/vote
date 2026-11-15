@@ -150,6 +150,19 @@ func _run() -> void:
 	_check(not hooked.commands.voter_fn.is_valid(), "bare_voter_ids off leaves dot-vote's own spelling")
 	_check(hooked.describe().get("minutes") == 10, "_describe_extra joins describe")
 
+	_test_unfed_settings()
+
+	var none := _Game.new()
+	_check(not none.install_commands(self).ok, "no commands before setup")
+	none.free()
+
+	print("")
+	print("%d passed, %d failed" % [_passed, _failed])
+	get_tree().quit(1 if _failed > 0 else 0)
+
+
+## Unfed settings are dropped from an operator's file unless the game reports rounds.
+func _test_unfed_settings() -> void:
 	# Unfed settings are taken out of an operator's file by default.
 	var path := "user://timed_selftest_vote.json"
 	var f := FileAccess.open(path, FileAccess.WRITE)
@@ -165,11 +178,3 @@ func _run() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	fed.free()
 	kept.free()
-
-	var none := _Game.new()
-	_check(not none.install_commands(self).ok, "no commands before setup")
-	none.free()
-
-	print("")
-	print("%d passed, %d failed" % [_passed, _failed])
-	get_tree().quit(1 if _failed > 0 else 0)

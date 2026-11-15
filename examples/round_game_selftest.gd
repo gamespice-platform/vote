@@ -140,6 +140,19 @@ func _run() -> void:
 	game.refresh_maps()
 	_check(game.source.entries.size() == 2, "refresh_maps reads the host's list again")
 
+	_test_hooks()
+
+	var none := _Game.new()
+	_check(not none.install_commands(self).ok, "no commands before setup")
+	none.free()
+
+	print("")
+	print("%d passed, %d failed" % [_passed, _failed])
+	get_tree().quit(1 if _failed > 0 else 0)
+
+
+## The overridable hooks: noun label, _map_noted, _ticked, _ballot_may_open and _apply.
+func _test_hooks() -> void:
 	# Hooks: the label follows the noun, apply/ballot gate/map-built/tick are the game's.
 	var hooked := _Hooked.new()
 	var hooked_applied: Array = []
@@ -166,11 +179,3 @@ func _run() -> void:
 	var refusal := hooked.source.apply_fn.call(&"bad") as DotResult
 	var accepted := hooked.source.apply_fn.call(&"m2") as DotResult
 	_check(not refusal.ok and accepted.ok and hooked_applied == [&"m2"], "_apply can refuse an id before apply_fn")
-
-	var none := _Game.new()
-	_check(not none.install_commands(self).ok, "no commands before setup")
-	none.free()
-
-	print("")
-	print("%d passed, %d failed" % [_passed, _failed])
-	get_tree().quit(1 if _failed > 0 else 0)
