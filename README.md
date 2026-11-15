@@ -3,9 +3,9 @@ Let players, rather than a rotation, decide what plays next: games, maps or mode
 ## Install
 
 1. Get [Godot 4.7](https://godotengine.org/download).
-2. Either use [dot-bootstrap](https://github.com/modcommunity/dot-bootstrap), which clones every project and links the addons, or copy `addons/dot_vote/` and [dot-core](https://github.com/modcommunity/dot-core)'s `addons/dot_core/` into your project and enable dot-vote in *Project > Project Settings > Plugins*.
+2. Either use [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons, or copy `addons/dot_vote/` and [dot-core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable dot-vote in *Project > Project Settings > Plugins*.
 
-dot-core is the only dependency. [dot-server](https://github.com/modcommunity/dot-server) and [dot-map](https://github.com/modcommunity/dot-map) are optional and are reached without being imported.
+dot-core is the only dependency. [dot-server](https://github.com/gamespice-platform/server) and [dot-map](https://github.com/gamespice-platform/map) are optional and are reached without being imported.
 
 ## Use
 
@@ -50,7 +50,7 @@ Everything else is configuration.
 | `DotVoteClock` | The limit, warnings, extends and rock-the-vote. |
 | `DotVoteClockView` | The clock as a client shows it. |
 | `DotVoteBallot` | The open ballot and the counting methods. |
-| `DotVoteBallotView`, `DotVoteBallotFeed` | The ballot as a client draws it, and a feed that sends it only when it changed. [dot-ui](https://github.com/modcommunity/dot-ui)'s `DotBallotPanel` draws it. |
+| `DotVoteBallotView`, `DotVoteBallotFeed` | The ballot as a client draws it, and a feed that sends it only when it changed. [dot-ui](https://github.com/gamespice-platform/ui)'s `DotBallotPanel` draws it. |
 | `DotVoteNominations` | What players have asked for, in order. |
 | `DotVoteHistory` | What has been played and what is on cooldown. |
 | `DotVoteResult` | What was decided, and how, including which tie-break. |
@@ -132,6 +132,6 @@ Import the project once, then run `examples/vote_selftest.tscn` headless with Go
 
 ## Status and licence
 
-Part of the TMC **dot-\*** family of Godot addons. Written with Claude Code and maintained by `gamemann`. Every addon has headless tests, but little of this has been played by real users yet, so expect rough edges and please [open an issue](https://github.com/modcommunity/dot-vote/issues) when you hit one.
+Part of the TMC **dot-\*** family of Godot addons. Written with Claude Code and maintained by `gamemann`. Every addon has headless tests, but little of this has been played by real users yet, so expect rough edges and please [open an issue](https://github.com/gamespice-platform/vote/issues) when you hit one.
 
 MIT licence, see [LICENSE](LICENSE). The only closed part of the TMC platform is the web back end; you can use your own instead of TMC's.
