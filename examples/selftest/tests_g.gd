@@ -531,8 +531,8 @@ func _test_nothing_to_vote_for() -> void:
 
 	# The same thing installed twice under two ids: a player sees one name on both.
 	var twice := _choices(["g2g", "owner_g2g", "fc"])
-	twice[0].display_name = "g2gfast"
-	twice[1].display_name = "G2gfast"
+	twice[0].display_name = "airdrift"
+	twice[1].display_name = "Airdrift"
 	var named := _make_director(_v_nothing_to_vote_for_rules, DotVoteListSource.of(twice))
 	named.begin(&"g2g")
 	var offered := named.build_options(4).map(func(c: DotVoteChoice) -> StringName: return c.id)
@@ -547,8 +547,8 @@ func _test_nothing_to_vote_for() -> void:
 
 func _test_nothing_to_vote_for_2() -> void:
 	var only_twice := _choices(["g2g", "owner_g2g"])
-	only_twice[0].display_name = "g2gfast"
-	only_twice[1].display_name = "g2gfast "
+	only_twice[0].display_name = "airdrift"
+	only_twice[1].display_name = "airdrift "
 	_v_nothing_to_vote_for_opened[0] = 0
 	var dup := _make_director(_v_nothing_to_vote_for_rules, DotVoteListSource.of(only_twice))
 	dup.vote_opened.connect(func(_o: Array, _s: float) -> void: _v_nothing_to_vote_for_opened[0] += 1)
