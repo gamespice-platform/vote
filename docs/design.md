@@ -13,7 +13,7 @@ So the thing being voted for is an id, the meaning of the id is a `DotVoteSource
 
 ## The one design decision
 
-**A `DotVoteChoice` is an id, a name, and the handful of facts a ballot needs.** It is not a game and not a map. The alternative, a ballot over `DotGameDescriptor`, fails for the family's parse reason (a script naming a `class_name` the project does not have takes every script referencing it down with it), and then fails again for a better one: a server offering "Arena", "Arena (low gravity)" and "surf_beginner" on one ballot is offering three things of two kinds, and a ballot that holds one kind cannot.
+**A `DotVoteChoice` is an id, a name, and the handful of facts a ballot needs.** It is not a game and not a map. The alternative, a ballot over `DotGameDescriptor`, fails for the family's parse reason (a script naming a `class_name` the project does not have takes every script referencing it down with it), and then fails again for a better one: a server offering "FC", "FC (low gravity)" and "surf_beginner" on one ballot is offering three things of two kinds, and a ballot that holds one kind cannot.
 
 Everything else follows from it. The sources are duck-typed. Per-choice settings, including the time limit, live in the thing's own metadata under a `vote` key, so a game's limit is written beside the game rather than in a second table of ids that goes stale.
 
@@ -94,7 +94,7 @@ Every game has a map menu on M (dot-menu's `DotMenuMaps`), and on a server its o
 - **"Now", not "next round".** Most round-based games' source applies by setting the next round's map, which is right for a ballot and wrong for an admin pressing M. A game sets `map_menu.change_fn` to its immediate change; without one the source's apply is used.
 - **A long list goes out in parts** (`chunks_of`, `PART_BYTES` each, `part`/`parts` on every one): dot-server drops a notice over 8 KB whole, and a timer server's few hundred maps are well over it.
 - A change while a ballot is open is refused: the ballot decides, and `endvote` closes it first.
-- **An id the source does not offer now is refused with a reason, not "there is no map called".** A list opened before a change can name an id that was on offer then (arena's team modes, until a change to a map without team spawns). A source may say why through a duck-typed `unavailable_reason(id) -> String`; otherwise the text says the list may be out of date.
+- **An id the source does not offer now is refused with a reason, not "there is no map called".** A list opened before a change can name an id that was on offer then (FC's team modes, until a change to a map without team spawns). A source may say why through a duck-typed `unavailable_reason(id) -> String`; otherwise the text says the list may be out of date.
 
 ## Votebans
 

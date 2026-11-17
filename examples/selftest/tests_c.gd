@@ -655,7 +655,7 @@ func _real_game_manager_commands(
 	ctx_script: GDScript, ctx: Object, replies: PackedStringArray,
 	commands: DotVoteCommands
 ) -> void:
-	# What a player types is resolved before it reaches the director. Arena's ids carry a
+	# What a player types is resolved before it reaches the director. FC's ids carry a
 	# `map:` prefix nobody types; without resolve_fn a bare name is an id nothing has.
 	var resolving := DotVoteCommands.new()
 	resolving.director = director

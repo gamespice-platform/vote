@@ -530,14 +530,14 @@ func _test_nothing_to_vote_for() -> void:
 	lonely.queue_free()
 
 	# The same thing installed twice under two ids: a player sees one name on both.
-	var twice := _choices(["g2g", "owner_g2g", "arena"])
+	var twice := _choices(["g2g", "owner_g2g", "fc"])
 	twice[0].display_name = "g2gfast"
 	twice[1].display_name = "G2gfast"
 	var named := _make_director(_v_nothing_to_vote_for_rules, DotVoteListSource.of(twice))
 	named.begin(&"g2g")
 	var offered := named.build_options(4).map(func(c: DotVoteChoice) -> StringName: return c.id)
 	_check(
-		offered == [&"arena"],
+		offered == [&"fc"],
 		"a choice named like the running one is not offered as another (%s)" % str(offered)
 	)
 	named.queue_free()

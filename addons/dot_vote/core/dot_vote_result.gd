@@ -2,7 +2,7 @@ class_name DotVoteResult
 extends RefCounted
 
 ## What a ballot decided, and how; returned by [method DotVoteBallot.resolve], never null.
-## The "how" lets the announcement say why ("Arena wins (tie, nominated first)"), the difference between a rule and a coin flip to anyone watching.
+## The "how" lets the announcement say why ("FC wins (tie, nominated first)"), the difference between a rule and a coin flip to anyone watching.
 
 ## What the ballot came to.
 enum Outcome {

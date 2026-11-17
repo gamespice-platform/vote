@@ -241,7 +241,7 @@ func _test_time_up_4() -> void:
 
 
 ## Every line about a player names them. The director printed the voter id, so every game's
-## chat read "[Server] u1 nominated Arena." while the ballot beside it drew the name.
+## chat read "[Server] u1 nominated FC." while the ballot beside it drew the name.
 func _test_voter_names() -> void:
 	_section("A line about a player names the player, not their id")
 
@@ -267,7 +267,7 @@ func _test_voter_names() -> void:
 	_check(
 		_v_voter_names_said.size() == 1 and _v_voter_names_said[0] == "Alice nominated B.",
 		"with people_fn a nomination names the player (%s)" % str(_v_voter_names_said),
-		"chat said 'u1 nominated Arena.'"
+		"chat said 'u1 nominated FC.'"
 	)
 	_v_voter_names_said.clear()
 	named.rock_the_vote(&"p1")

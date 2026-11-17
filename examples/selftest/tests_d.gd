@@ -244,7 +244,7 @@ func _test_map_menu_2() -> void:
 	var refusal: Dictionary = (_v_map_menu_sent.back() as Dictionary).get("result", {})
 	_check(str(refusal.get("how", "")) == "refused" and str(refusal.get("text", "")).contains("not on offer here now"),
 		"a map not on offer is refused, and the text says the list may be out of date (%s)" % str(refusal.get("text", "")))
-	# A source that knows why says so: arena's team mode on a map with no team spawns.
+	# A source that knows why says so: FC's team mode on a map with no team spawns.
 	var reasoned := _ReasonSource.new()
 	reasoned.entries = _v_map_menu_source.entries
 	_v_map_menu_director.source = reasoned
@@ -423,7 +423,7 @@ func _map_menu_late_flag() -> void:
 func _test_choices() -> void:
 	_section("A choice knows what it needs, and hands out copies of its metadata")
 
-	var choice := DotVoteChoice.of(&"arena", "Arena")
+	var choice := DotVoteChoice.of(&"fc", "FC")
 	choice.min_players = 4
 	choice.max_players = 16
 
