@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_h.gd"
+extends "res://examples/selftest/selftest_parity_hibernation_views.gd"
 
-## Selftest sections, part i.
+## Selftest sections: time up, voter names and the ballot view.
 
 var _v_time_up_now: DotVoteDirector
 var _v_time_up_held_applied: Array

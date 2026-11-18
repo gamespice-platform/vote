@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_a.gd"
+extends "res://examples/selftest/selftest_config_and_quorum.gd"
 
-## Selftest sections, part b.
+## Selftest sections: that every rules setting is read.
 
 
 ## Fails for any setting nothing reads.

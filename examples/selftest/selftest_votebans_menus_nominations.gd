@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_c.gd"
+extends "res://examples/selftest/selftest_admin_and_catalogue.gd"
 
-## Selftest sections, part d.
+## Selftest sections: votebans, map menus, choices, rules layering and nominations.
 
 var _v_votebans_rig: Array
 var _v_votebans_bans: DotVoteBans

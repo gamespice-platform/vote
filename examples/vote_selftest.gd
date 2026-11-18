@@ -1,4 +1,4 @@
-extends "res://examples/selftest/tests_i.gd"
+extends "res://examples/selftest/selftest_time_up_and_ballot_view.gd"
 
 ## Proves the vote engine counts, refuses, expires and actually changes what is running.
 ##

@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_g.gd"
+extends "res://examples/selftest/selftest_triggers_ballots_rtv.gd"
 
-## Selftest sections, part h.
+## Selftest sections: rtv parity, hibernation, empty server, no votes and the clock view.
 
 var _v_rtv_parity_director: DotVoteDirector
 var _v_rtv_parity_keeper: DotVoteDirector

@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_f.gd"
+extends "res://examples/selftest/selftest_director_fill_countdown.gd"
 
-## Selftest sections, part g.
+## Selftest sections: round end triggers, ballot options, manual rtv and empty ballots.
 
 var _v_round_end_trigger_held: DotVoteDirector
 var _v_round_end_trigger_timed: DotVoteDirector

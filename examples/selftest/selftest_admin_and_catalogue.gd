@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_b.gd"
+extends "res://examples/selftest/selftest_settings_audit.gd"
 
-## Selftest sections, part c.
+## Selftest sections: admin commands, the real game manager and the map catalogue.
 
 var _v_admin_and_queries_director: DotVoteDirector
 var _v_admin_and_queries_removed: Array

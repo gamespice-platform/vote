@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_d.gd"
+extends "res://examples/selftest/selftest_votebans_menus_nominations.gd"
 
-## Selftest sections, part e.
+## Selftest sections: counting, tie breaks, the clock and rock-the-vote.
 
 var _v_counting_approval_rules: DotVoteRules
 var _v_clock_rules: DotVoteRules

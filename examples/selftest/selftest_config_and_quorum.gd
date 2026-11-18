@@ -1,6 +1,6 @@
 extends "res://examples/selftest/selftest_base.gd"
 
-## Selftest sections, part a.
+## Selftest sections: config layout, rules validation, history, quorum and layered ballots.
 
 
 func _test_subscribed_maps() -> void:

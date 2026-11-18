@@ -1,6 +1,6 @@
-extends "res://examples/selftest/tests_e.gd"
+extends "res://examples/selftest/selftest_counting_clock_rtv.gd"
 
-## Selftest sections, part f.
+## Selftest sections: director end to end, fill modes, apply moments, chooser settings and countdown.
 
 var _v_director_end_to_end_applied: Array
 var _v_director_end_to_end_rules: DotVoteRules
