@@ -216,7 +216,7 @@ func _test_admin_and_queries_4() -> void:
 	_done()
 
 
-## A real dot-server game manager, voted over and actually changed.
+## A real GameSpice Server game manager, voted over and actually changed.
 ## Objects are built reflectively, the path [DotVoteGameSource] takes, so wrong duck typing fails here.
 func _test_real_game_manager() -> void:
 	_section("A real dot-server game manager, voted over and actually changed")
@@ -472,7 +472,7 @@ func _test_real_game_manager_4() -> void:
 	_done()
 
 
-## A real dot-map catalogue and session, voted over and actually changed.
+## A real GameSpice Map catalogue and session, voted over and actually changed.
 func _test_real_map_catalogue() -> void:
 	_section("A real dot-map catalogue, voted over and actually changed")
 

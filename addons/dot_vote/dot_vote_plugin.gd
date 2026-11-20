@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-## Editor entry point for dot-vote. Registers inspector types only.
+## Editor entry point for GameSpice Vote. Registers inspector types only.
 ## No autoloads: a test with a server and a client in one process, or a server voting over games and maps, needs two directors.
 
 const _ICON := "res://addons/dot_vote/icon_placeholder.svg"

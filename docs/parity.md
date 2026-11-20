@@ -13,12 +13,12 @@ Legend: **have** — it was already here; **new** — added for parity; **differ
 | `mce_endvote` | `end_vote` | **new**. The switch: off, limits still end the map and the rotation, an admin's `setnextmap` or a rock-the-vote decides what is next. `trigger: rtv_only` is the same thing, and used to open a ballot at the lead anyway — fixed. |
 | `mce_starttime` | `vote_lead_sec` | have. Seconds, not minutes. |
 | (the engines' own "finish the round when the map's time is up") | `time_up`, `finish_round_max_sec`, `DotVoteDirector.round_based` | **new**. `change_now` or `finish_round`, capped; only on a host that reports round ends, and only for a time or score limit. |
-| — (a numbered menu, or a sandbox's clickable map vote with avatars) | `ballot_input`, `ballot_show_voters`, `DotVoteBallotView`, `DotVoteBallotFeed` | **new**. What a client needs to draw the ballot; dot-ui's `DotBallotPanel` draws it. |
+| — (a numbered menu, or a sandbox's clickable map vote with avatars) | `ballot_input`, `ballot_show_voters`, `DotVoteBallotView`, `DotVoteBallotFeed` | **new**. What a client needs to draw the ballot; GameSpice UI's `DotBallotPanel` draws it. |
 | `mce_start_percent`, `mce_start_percent_enable` | `vote_lead_fraction` | **new**. One setting: 0 is off. Measured against the limit as extended. |
 | `mce_startround` | `vote_lead_rounds` | have. |
 | `mce_startfrags` | `vote_lead_score` with `score_limit` | **new**. A generic score the host reports through `DotVoteDirector.note_score` — frags, team wins, points. `trigger: score_limit` for a game whose only limit is a score. |
 | `mp_winlimit` / `mp_maxrounds` / `mp_fraglimit` (read by the chooser) | `round_limit`, `score_limit`, `duration_sec` | have / **new**. The limits are the vote's own, with per-choice overrides for time and rounds. |
-| `mce_extend` | `include_extend`, `max_extends` | have. Note the old `0` meant "no extends"; here `max_extends: 0` is unlimited and `include_extend: false` is none. "Extend" leaves the ballot once the extensions are used up, as the plugin's does (`mapchooser_extended.sp` checks the extend count before adding it); **new here** in the sense that dot-vote's own first version offered it and then refused it. |
+| `mce_extend` | `include_extend`, `max_extends` | have. Note the old `0` meant "no extends"; here `max_extends: 0` is unlimited and `include_extend: false` is none. "Extend" leaves the ballot once the extensions are used up, as the plugin's does (`mapchooser_extended.sp` checks the extend count before adding it); **new here** in the sense that GameSpice Vote's own first version offered it and then refused it. |
 | `mce_extend_timestep` | `extend_seconds` | have. Seconds, not minutes. |
 | `mce_extend_roundstep` | `extend_rounds` | have. |
 | `mce_extend_fragstep` | `extend_score` | **new**. `score_limit_changed` tells a host that enforces its own limit. |
@@ -36,7 +36,7 @@ Legend: **have** — it was already here; **new** — added for parity; **differ
 | `mce_extendposition` | `pseudo_options_first` | **new**. Presentation only: ties are still broken choices-first. |
 | `mce_randomizeorder` | `shuffle_ballot` | **new**. Seeded from `fill_seed`, so a client reproduces it. |
 | `mce_addnovote` | `include_abstain` | **new**. Recorded, closes the voter's part, counts toward the quorum, toward no option and no majority. |
-| `mce_blockslots`, `mce_menustyle` | — | **not**. Menu rendering; dot-vote draws nothing. |
+| `mce_blockslots`, `mce_menustyle` | — | **not**. Menu rendering; GameSpice Vote draws nothing. |
 | `sm_mapvote` | `revote` → `DotVoteDirector.start_vote(reason, force)` | have, **different**: now through the countdown, and replaces a change already decided. |
 | `sm_setnextmap` | `setnextmap` → `set_next(id)` | **new**. Applies at the end of the clock and counts as the end vote having finished. |
 | `mce_reload_maplist` | `votereload` → `reload()` / `DotVoteSource.reload()` | **new**. Most sources read live and have nothing to reload; `DotVoteListSource` re-reads its file. |
@@ -76,11 +76,11 @@ Legend: **have** — it was already here; **new** — added for parity; **differ
 
 | Old cvar / command | Here | |
 | --- | --- | --- |
-| Vote start / vote end / warning / runoff warning sounds | `cue_vote_start`, `cue_vote_end`, `cue_warning`, `cue_runoff_warning` → `signal cue(id)` | **new**. Ids, not files; empty is silent and every one ships empty. The host plays them through dot-audio. dot-vote names no audio class. |
+| Vote start / vote end / warning / runoff warning sounds | `cue_vote_start`, `cue_vote_end`, `cue_warning`, `cue_runoff_warning` → `signal cue(id)` | **new**. Ids, not files; empty is silent and every one ships empty. The host plays them through GameSpice Audio. GameSpice Vote names no audio class. |
 | Counter sounds, per second | `cue_countdown` (`%d` template) and `cue_countdown_at` | **new**. |
 | `mce_sounds_enablesounds`, `mce_sounds_enablewarningcountersounds` | empty cue ids | **different**: nothing to switch off when nothing is configured. |
 | `mce_sounds_soundset` | a different set of ids in the rules file | **different**. |
-| `mce_sounds_downloadallsounds`, `mce_sounds_reload`, `mce_sounds_list_soundsets` | — | **not**. Delivery and listing are dot-audio's and dot-cloud's. |
+| `mce_sounds_downloadallsounds`, `mce_sounds_reload`, `mce_sounds_list_soundsets` | — | **not**. Delivery and listing are GameSpice Audio's and GameSpice Cloud's. |
 
 ## Natives and forwards
 
@@ -108,8 +108,8 @@ Legend: **have** — it was already here; **new** — added for parity; **differ
 
 | Old | Why not |
 | --- | --- |
-| Translations | `announce_fn` takes a string; dot-locale is where localisation lives, and naming it here would make this addon require it. |
-| Menus, hint boxes, blocked slots | dot-vote draws nothing — `vote_opened`, `countdown_tick` and `tally_updated` carry what a HUD needs. |
+| Translations | `announce_fn` takes a string; GameSpice Locale is where localisation lives, and naming it here would make this addon require it. |
+| Menus, hint boxes, blocked slots | GameSpice Vote draws nothing — `vote_opened`, `countdown_tick` and `tally_updated` carry what a HUD needs. |
 | Bonus-round-time warning | Engine-specific round timing. A host that has one calls `note_round_end` when it ends. |
 | Win-limit clinch detection | The game knows when a match is clinched and reports it as a score or a round. |
 
@@ -121,8 +121,8 @@ The table was read row by row against the plugins' `.sp` files. Three rows were 
 | --- | --- |
 | `mce_forcertv`, an alias of `sm_forcertv` | `forcertv` is the one name; aliases are a console's business. |
 | `OnMapVoteStart`, a deprecated forward | `vote_opened`, which the non-deprecated forward already maps to. |
-| `sm_mapvote_reload_sounds`, `sm_mapvote_list_soundsets` (deprecated) | **not**: dot-vote plays nothing; cue ids are the host's catalogue. |
+| `sm_mapvote_reload_sounds`, `sm_mapvote_list_soundsets` (deprecated) | **not**: GameSpice Vote plays nothing; cue ids are the host's catalogue. |
 | The version cvars | **not**: an addon's version is its `plugin.cfg`. |
 | A tie for first always goes to a runoff, whatever the runoff percentage | Stated here because the table did not say it outright: see the runoff rows above for what `runoff_*` does on a tie. |
 
-**What reaches a running ballot, per layer.** `vote_selftest`'s "every config layer reaches a running ballot" sets `end_vote`, `include_extend` and `extend_seconds` through the game's metadata overlay, the JSON file, `DOT_VOTE_*` and `--vote-*`, each in a child process (`examples/layer_probe.gd`, because the command line is the process's own), and asserts the ballot: none opened, no Extend on it, the clock moved by the layered number. dot-server-deploy's own layers (`cfg/addons/dot_vote/vote.yml`, formerly `cfg/vote.yml`, `DOT_GAME_VOTE_*`, `--game-vote-*`) feed the game vote there and are not covered by this.
+**What reaches a running ballot, per layer.** `vote_selftest`'s "every config layer reaches a running ballot" sets `end_vote`, `include_extend` and `extend_seconds` through the game's metadata overlay, the JSON file, `DOT_VOTE_*` and `--vote-*`, each in a child process (`examples/layer_probe.gd`, because the command line is the process's own), and asserts the ballot: none opened, no Extend on it, the clock moved by the layered number. GameSpice Server Deploy's own layers (`cfg/addons/dot_vote/vote.yml`, formerly `cfg/vote.yml`, `DOT_GAME_VOTE_*`, `--game-vote-*`) feed the game vote there and are not covered by this.

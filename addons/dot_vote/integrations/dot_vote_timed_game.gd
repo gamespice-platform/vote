@@ -56,7 +56,7 @@ var player_count_fn: Callable = Callable()
 ## Says a line to everybody.
 var announce_fn: Callable = Callable()
 
-## Whether a voter is an admin, for dot-vote's admin bypasses.
+## Whether a voter is an admin, for GameSpice Vote's admin bypasses.
 var is_admin_fn: Callable = Callable()
 
 ## [code]func(state: Dictionary)[/code]: the ballot as a client draws it, sent when it changes.
@@ -68,12 +68,12 @@ var people_fn: Callable = Callable()
 ## `() -> Dictionary`: maps.yml's `commands:` block, so an operator renames the vote's commands without this game naming any.
 var commands_spec_fn: Callable = Callable()
 
-## `(id) -> bool` and `() -> Array`: maps.yml's active rotation, handed to the default source so the pack maps dot-vote merges are filtered and
-## ordered like the game's own (dot-vote API level 12).
+## `(id) -> bool` and `() -> Array`: maps.yml's active rotation, handed to the default source so the pack maps GameSpice Vote merges are filtered and
+## ordered like the game's own (GameSpice Vote API level 12).
 var in_rotation_fn: Callable = Callable()
 var rotation_order_fn: Callable = Callable()
 
-## Whether `!vote` voters are the bare session id (the spelling [member voters_fn] lists). dot-vote's own default is `u<userid>`; a game whose
+## Whether `!vote` voters are the bare session id (the spelling [member voters_fn] lists). GameSpice Vote's own default is `u<userid>`; a game whose
 ## ids are that spelling turns this off.
 var bare_voter_ids: bool = true
 
@@ -106,7 +106,7 @@ func _default_kinds() -> PackedStringArray:
 	return PackedStringArray()
 
 
-## What a game with a clock wants from dot-vote by default. Every line is a default an operator overrides in [member config_path].
+## What a game with a clock wants from GameSpice Vote by default. Every line is a default an operator overrides in [member config_path].
 func _rules() -> DotVoteRules:
 	var rules := DotVoteRules.new()
 	rules.trigger = DotVoteRules.Trigger.TIME_LIMIT
@@ -129,7 +129,7 @@ func _make_source() -> DotVoteSource:
 		list.follow_content(
 			content_index if content_index != null else DotContentIndex.shared(),
 			_default_kinds() if accepted_kinds.is_empty() else accepted_kinds)
-	# By name, only where it exists: a delivered pack may run on an older shell dot-vote.
+	# By name, only where it exists: a delivered pack may run on an older shell GameSpice Vote.
 	if "in_rotation_fn" in list:
 		list.set(&"in_rotation_fn", in_rotation_fn)
 		list.set(&"rotation_order_fn", rotation_order_fn)
@@ -151,12 +151,12 @@ func _voters() -> Array:
 	return voters_fn.call() if voters_fn.is_valid() else []
 
 
-## The head count dot-vote's thresholds use.
+## The head count GameSpice Vote's thresholds use.
 func _player_count() -> int:
 	return int(player_count_fn.call()) if player_count_fn.is_valid() else _voters().size()
 
 
-## A line dot-vote announces, in the game's words. Overridden by a game that has no rounds to speak of.
+## A line GameSpice Vote announces, in the game's words. Overridden by a game that has no rounds to speak of.
 func _in_our_words(line: String) -> String:
 	return line
 
@@ -311,8 +311,8 @@ func is_voting() -> bool:
 	return director != null and director.is_voting()
 
 
-## dot-vote's commands on [param host]: `vote`, `rtv`, `nominate` and the operator's. Voters are the bare session id when
-## [member bare_voter_ids], the same spelling [member voters_fn] lists; dot-vote's default is `u<userid>`, and two spellings of one voter is
+## GameSpice Vote's commands on [param host]: `vote`, `rtv`, `nominate` and the operator's. Voters are the bare session id when
+## [member bare_voter_ids], the same spelling [member voters_fn] lists; GameSpice Vote's default is `u<userid>`, and two spellings of one voter is
 ## a player who rocks the vote twice.
 func install_commands(host: Object) -> DotResult:
 	if director == null:

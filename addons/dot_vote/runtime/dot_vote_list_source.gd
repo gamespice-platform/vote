@@ -128,7 +128,7 @@ func _through_rotation(all: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 
 
 ## Merges the maps subscribed packs provide into this list, for the index's current session only; opt-in.
-## Empty [param accepted_kinds] accepts none and "*" every [code]map_kind[/code], as [code]DotMapCatalogue.follow_content[/code]. The index is dot-core's, so no dot-map dependency.
+## Empty [param accepted_kinds] accepts none and "*" every [code]map_kind[/code], as [code]DotMapCatalogue.follow_content[/code]. The index is GameSpice Core's, so no GameSpice Map dependency.
 func follow_content(index: DotContentIndex, accepted_kinds: PackedStringArray = PackedStringArray()) -> void:
 	content_index = index
 	content_kinds = accepted_kinds

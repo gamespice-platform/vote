@@ -4,10 +4,10 @@ Why this addon is shaped the way it is. Setting-by-setting coverage of the commu
 
 ## Why it is a separate addon
 
-dot-map already had a map vote (`DotMapVote`, `DotMapTimeLimit`) and dot-server already had `DotVoteManager` for yes/no questions. Neither is this, and adding this to either would have been the wrong shape twice:
+GameSpice Map already had a map vote (`DotMapVote`, `DotMapTimeLimit`) and GameSpice Server already had `DotVoteManager` for yes/no questions. Neither is this, and adding this to either would have been the wrong shape twice:
 
 - **`DotVoteManager` is a different question.** It asks "yes or no" with a quorum and a cooldown, and votekick is the reason it exists. A ballot with six options, a transferable preference and a tie-break is not a special case of it.
-- **`DotMapVote` is the same question about one kind of thing.** It is a plurality ballot with one fixed tie-break, one fixed extend rule, and no quorum, cooldown, runoff, weighting or per-map limit. Generalising it in place would have made dot-map the home of a vote engine that dot-server's *games* also need, and a server that votes for its next game would then depend on dot-map to do it.
+- **`DotMapVote` is the same question about one kind of thing.** It is a plurality ballot with one fixed tie-break, one fixed extend rule, and no quorum, cooldown, runoff, weighting or per-map limit. Generalising it in place would have made GameSpice Map the home of a vote engine that GameSpice Server's *games* also need, and a server that votes for its next game would then depend on GameSpice Map to do it.
 
 So the thing being voted for is an id, the meaning of the id is a `DotVoteSource`, and one engine serves both. **dot-map's own vote is not deprecated**: a server happy with a plurality ballot and a countdown needs nothing here. Every game in the family with a vote is on `DotVoteDirector` now.
 
@@ -34,7 +34,7 @@ The games written before this opened the rocked ballot themselves from `clock.ex
 
 ## An empty server: the clock sleeps, or the server moves on by itself
 
-Two halves, one per setting of dot-server's `sv_hibernate_when_empty`:
+Two halves, one per setting of GameSpice Server's `sv_hibernate_when_empty`:
 
 - **Hibernating (the default).** A director following the server (`follow_hibernation`, which dot-game's `DotGameModule` does for every director under a game module) counts nothing while it sleeps: not the clock, a ballot, a countdown or the cooldown. Waking calls `restart()`: the choice's own limit, every extend, no rock-the-vote, no ballot, no decided change, and **no second history entry** (calling `begin` again would write one and shorten every cooldown). `wake_restart: false` resumes instead.
 - **Not hibernating.** The clock runs, the vote due at the lead cannot open for want of a voter (`min_players_to_vote` is 1) and is retried, so somebody arriving before the limit still gets it; and at the limit, with `player_count()` at 0, `empty_choice` decides: `random` (default) draws from the ballot's own pool, judged for one player, never the running choice even under `include_current`; `rotation` takes the next in order; `wait` is the old behaviour. The change is immediate, with no `apply_delay_sec` and no `finish_round` hold, because nobody is reading a result or playing a round. A one-choice server restarts its clock rather than sitting expired. The draw uses `empty_rng` (entropy-seeded), not `fill_seed`, because a deterministic draw would send every freshly booted server in a fleet to the same map.
@@ -43,7 +43,7 @@ Two halves, one per setting of dot-server's `sv_hibernate_when_empty`:
 
 ## Three clocks, and only one of them is a round's
 
-A map's time limit, a round's time limit and a round limit are three settings, and the round-based shooters have always kept them apart: `duration_sec` is the map's clock (or the game's, for a server's game vote), `round_limit` is how many rounds it gets, and how long ONE round lasts is the game's own rule (dot-match's `time_limit_sec`), which this addon never sees. Any of them can be set at once and whichever arrives first ends the choice.
+A map's time limit, a round's time limit and a round limit are three settings, and the round-based shooters have always kept them apart: `duration_sec` is the map's clock (or the game's, for a server's game vote), `round_limit` is how many rounds it gets, and how long ONE round lasts is the game's own rule (GameSpice Match's `time_limit_sec`), which this addon never sees. Any of them can be set at once and whichever arrives first ends the choice.
 
 **0 is around the clock.** `duration_sec: 0` with rock-the-vote on validates: refusing it as "nothing would ever start a vote" was true of the rules and not of the server, because a rock-the-vote still does. A choice's own `time_limit_sec: 0` means the same for one map under a server with a limit.
 
@@ -68,11 +68,11 @@ A map's time limit, a round's time limit and a round limit are three settings, a
 ## Deliberately not here
 
 - **No wire format.** It belongs in the game's netcode bridge: dot-net's message registry is where a message type is declared, and naming it here would make this addon require dot-net. `DotVoteDirector` emits everything a bridge needs (`vote_opened`, `vote_cast`, `tally_updated`, `vote_closed`) and takes votes by voter id, which is what a bridge hands it.
-- **No UI.** dot-ui's `DotBallotPanel` draws a `DotVoteBallotView`; it takes the dictionary and names nothing here.
+- **No UI.** GameSpice UI's `DotBallotPanel` draws a `DotVoteBallotView`; it takes the dictionary and names nothing here.
 - **No persistence.** `DotVoteHistory` serialises to a dictionary and the host decides where it goes. A server that wants its cooldowns to survive a restart writes it out; a store interface for one dictionary would be ceremony.
-- **No per-choice permissions.** dot-map has `nominate_permission` on a map def and this deliberately does not copy it: whether a player may nominate something is a question about the player, and the host answers it before calling `nominate`.
+- **No per-choice permissions.** GameSpice Map has `nominate_permission` on a map def and this deliberately does not copy it: whether a player may nominate something is a question about the player, and the host answers it before calling `nominate`.
 - **Nothing draws or plays on its own.** `announce_fn` takes a string and `cue` carries an id. The countdown is counted here and drawn by the host.
-- **No dependency on dot-audio.** The `cue_*` settings are ids and the signal hands them over; a sound set is a different set of ids in the rules file.
+- **No dependency on GameSpice Audio.** The `cue_*` settings are ids and the signal hands them over; a sound set is a different set of ids in the rules file.
 
 ## The suite
 
@@ -92,7 +92,7 @@ Every game has a map menu on M (dot-menu's `DotMenuMaps`), and on a server its o
 - **Alone is different.** `sv_map_menu_alone` (1 by default): the only human playing changes the map directly, because there is nobody to ask and nobody to harm, and a lone runner on an empty server should not wait out a clock. A second human makes it a vote again. 0 is staff only, plus votes.
 - **The host owns its server.** A session with no transport (`DotClientSession.local`, adopted by the listen host for its own player) may always change it. Never by address: behind a TLS proxy every browser on a public server arrives from loopback.
 - **"Now", not "next round".** Most round-based games' source applies by setting the next round's map, which is right for a ballot and wrong for an admin pressing M. A game sets `map_menu.change_fn` to its immediate change; without one the source's apply is used.
-- **A long list goes out in parts** (`chunks_of`, `PART_BYTES` each, `part`/`parts` on every one): dot-server drops a notice over 8 KB whole, and a timer server's few hundred maps are well over it.
+- **A long list goes out in parts** (`chunks_of`, `PART_BYTES` each, `part`/`parts` on every one): GameSpice Server drops a notice over 8 KB whole, and a timer server's few hundred maps are well over it.
 - A change while a ballot is open is refused: the ballot decides, and `endvote` closes it first.
 - **An id the source does not offer now is refused with a reason, not "there is no map called".** A list opened before a change can name an id that was on offer then (FC's team modes, until a change to a map without team spawns). A source may say why through a duck-typed `unavailable_reason(id) -> String`; otherwise the text says the list may be out of date.
 
@@ -105,7 +105,7 @@ A game starts one with `start(DotVoteBans.GAME, target, reason)`; the reason rea
 
 ## Renaming the commands
 
-`DotVoteCommands.prefix` and `names` rename every command; a role's value may be a list, the first name being the one help and hints show (`command_name`, `typed`) and the rest aliases. `spec_fn` (`() -> Dictionary` with `prefix` and `names`) lets an operator's file do it: dot-map's `maps.yml` and the server's `games.yml` have a `commands:` block, normalised by dot-core's `DotRotationSpec`, and a game points `spec_fn` at its rotation file instead of naming anything. The file wins over the game's own settings. A name another command already holds is skipped with a WARN (`DotCommandNames.available`), never taken. `chat_prefix` is the first of the server's `chat_command_prefixes`, for text shown to players only.
+`DotVoteCommands.prefix` and `names` rename every command; a role's value may be a list, the first name being the one help and hints show (`command_name`, `typed`) and the rest aliases. `spec_fn` (`() -> Dictionary` with `prefix` and `names`) lets an operator's file do it: GameSpice Map's `maps.yml` and the server's `games.yml` have a `commands:` block, normalised by GameSpice Core's `DotRotationSpec`, and a game points `spec_fn` at its rotation file instead of naming anything. The file wins over the game's own settings. A name another command already holds is skipped with a WARN (`DotCommandNames.available`), never taken. `chat_prefix` is the first of the server's `chat_command_prefixes`, for text shown to players only.
 
 ## Reasoning moved out of the source
 

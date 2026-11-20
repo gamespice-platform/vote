@@ -84,7 +84,7 @@ func set_hibernating(on: bool) -> void:
 
 
 ## Follows a server's hibernation: [method set_hibernating] on its [code]hibernation_changed(bool)[/code] signal, from its current state.
-## Duck-typed (no dot-server names); returns false if the object has no such signal. Safe to call twice.
+## Duck-typed (no GameSpice Server names); returns false if the object has no such signal. Safe to call twice.
 func follow_hibernation(server: Object) -> bool:
 	if server == null or not server.has_signal("hibernation_changed"):
 		return false

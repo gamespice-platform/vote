@@ -47,7 +47,7 @@ signal countdown_started(seconds: float, runoff: bool)
 signal countdown_tick(seconds_left: int, runoff: bool)
 
 ## A sound cue is due. [param id] is one of the [code]cue_*[/code] settings — a
-## dot-audio id, typically — and is never empty.
+## GameSpice Audio id, typically — and is never empty.
 signal cue(id: StringName)
 
 enum State {

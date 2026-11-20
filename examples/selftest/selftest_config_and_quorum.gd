@@ -237,7 +237,7 @@ func _test_history() -> void:
 	_check(history.plays_since(&"a") == 2, "how long ago is reportable")
 	_check(history.times_played(&"a") == 1, "and so is how often")
 
-	# dot-map's rotation learned this the hard way: a cooldown longer than the pool
+	# GameSpice Map's rotation learned this the hard way: a cooldown longer than the pool
 	# excludes everything, and a rotation that offers nothing leaves the server where
 	# it is for ever with no error anywhere.
 	var deep := _rules()

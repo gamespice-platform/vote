@@ -2,8 +2,8 @@ class_name DotVoteCommands
 extends RefCounted
 
 ## The console and chat commands, on a dot-server, in one call: [code]DotVoteCommands.install(self, director)[/code] from a DotModule's _module_loaded.
-## Duck-typed so dot-vote installs without dot-server: the host has [code]add_command[/code] or [code]command[/code], a context has [code]reply[/code] and [code]args[/code].
-## Every name is configurable ([member names], [member prefix]) because dot-server already ships [code]vote[/code] and players of other servers type different words.
+## Duck-typed so GameSpice Vote installs without GameSpice Server: the host has [code]add_command[/code] or [code]command[/code], a context has [code]reply[/code] and [code]args[/code].
+## Every name is configurable ([member names], [member prefix]) because GameSpice Server already ships [code]vote[/code] and players of other servers type different words.
 
 const CHANNEL := "vote.commands"
 
@@ -56,7 +56,7 @@ var prefix: String = ""
 var names: Dictionary = {}
 
 ## Where an operator's `commands:` block comes from: [code]() -> Dictionary[/code] with `prefix`
-## and `names`, e.g. dot-map's `DotMapRotationFile.commands`. Read once by [method bind], after
+## and `names`, e.g. GameSpice Map's `DotMapRotationFile.commands`. Read once by [method bind], after
 ## the game's own settings, so the file wins. Duck-typed so this addon names no other.
 var spec_fn: Callable = Callable()
 
@@ -68,10 +68,10 @@ var chat_prefix: String = "!"
 var skipped: PackedStringArray = PackedStringArray()
 
 ## Permission an admin command needs. Empty makes them console-only.
-## `changemap` is [code]DotAdminFlags.CHANGEMAP[/code], spelled out so the file parses without dot-server; [code]DotAdminFlags.granted[/code] matches the string exactly.
+## `changemap` is [code]DotAdminFlags.CHANGEMAP[/code], spelled out so the file parses without GameSpice Server; [code]DotAdminFlags.granted[/code] matches the string exactly.
 var admin_permission: String = "changemap"
 
-## How a command context becomes a voter id; the default reads the session's userid, which dot-server keys a player on.
+## How a command context becomes a voter id; the default reads the session's userid, which GameSpice Server keys a player on.
 var voter_fn: Callable = Callable()
 
 ## How what a player typed becomes a choice id: [code](text: String) -> StringName[/code].

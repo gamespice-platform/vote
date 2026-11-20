@@ -196,7 +196,7 @@ func _next_in_rotation() -> StringName:
 		return choice.id
 
 	# Everything is on cooldown or unavailable. Playing something again is a much
-	# better answer than stopping, which is dot-map's rotation's lesson.
+	# better answer than stopping, which is GameSpice Map's rotation's lesson.
 	for step in range(all.size()):
 		var choice := all[(start + step) % all.size()]
 
@@ -252,7 +252,7 @@ func build_options(players: int) -> Array[DotVoteChoice]:
 
 	# Everything eligible is on cooldown. Offering nothing would leave the server where
 	# it is for ever with no error anywhere, so the cooldown is dropped rather than the
-	# ballot — the same choice dot-map's rotation makes, said out loud.
+	# ballot — the same choice GameSpice Map's rotation makes, said out loud.
 	if pool.is_empty():
 		pool = _eligible_pool(players, taken, true)
 

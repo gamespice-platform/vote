@@ -19,7 +19,7 @@ extends "res://examples/selftest/selftest_time_up_and_ballot_view.gd"
 ##
 ## The two integration sections run this addon against a real [code]DotGameManager[/code]
 ## and a real [code]DotMapCatalogue[/code], because "the two ends have never met" is how
-## every expensive bug in this family has started: dot-map calling `ensure` on a client
+## every expensive bug in this family has started: GameSpice Map calling `ensure` on a client
 ## that offered `acquire`, the leaderboard reporter sending its file format as the wire,
 ## four call sites finding a null cloud client and none of them erroring. A vote that
 ## elects a winner and cannot make the server play it is exactly that shape.

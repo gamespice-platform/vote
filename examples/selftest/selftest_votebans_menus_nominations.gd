@@ -134,8 +134,8 @@ func _test_votebans_2() -> void:
 	_done()
 
 
-## M in every game: the server half, on a real dot-server console with real contexts, so the
-## permission check is dot-server's own and not a fake that agrees with this file.
+## M in every game: the server half, on a real GameSpice Server console with real contexts, so the
+## permission check is GameSpice Server's own and not a fake that agrees with this file.
 func _test_map_menu() -> void:
 	_section("The map menu: the owner's flag changes, anybody else votes")
 

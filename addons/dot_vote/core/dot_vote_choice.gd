@@ -4,7 +4,7 @@ extends Resource
 
 ## One thing that can be voted for: a game, a map, a mode, a mutator.
 ## Deliberately an id, a name and the facts a ballot needs, not a game or a map; what the id means is a [DotVoteSource]'s business.
-## That is how one vote system drives dot-server's game list and dot-map's catalogue without naming either.
+## That is how one vote system drives GameSpice Server's game list and GameSpice Map's catalogue without naming either.
 
 ## Id, unique within a source; history, cooldowns and per-choice configuration are keyed on it, so never rename it.
 @export var id: StringName = &""

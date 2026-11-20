@@ -2,7 +2,7 @@ class_name DotVoteBans
 extends RefCounted
 
 ## A vote to ban one player: yes or no, one at a time, enabled per server and per role.
-## Its own thing, not a ballot: one question about one person, with its own clock, eligibility (all but the target) and a consequence the game carries out through [member ban_fn]. It holds no ban list and names no dot-server class. Setup: docs/design.md "Votebans".
+## Its own thing, not a ballot: one question about one person, with its own clock, eligibility (all but the target) and a consequence the game carries out through [member ban_fn]. It holds no ban list and names no GameSpice Server class. Setup: docs/design.md "Votebans".
 ## [member rules] holds every policy and [member role_fn] names roles. A start from the game ([constant GAME]) skips the start role and starter cooldown, never the target's immunity or cooldown. It passes when [code]ceil(threshold * eligible)[/code] say yes and fails when that can no longer happen or time runs out, so silence is a no.
 
 const CHANNEL := "vote.bans"

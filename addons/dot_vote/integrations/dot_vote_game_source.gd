@@ -2,7 +2,7 @@ class_name DotVoteGameSource
 extends DotVoteSource
 
 ## Votes over the games a [code]DotGameManager[/code] can run.
-## It names no dot-server class, so the addon installs without dot-server: the manager arrives as an [Object], duck-typed.
+## It names no GameSpice Server class, so the addon installs without GameSpice Server: the manager arrives as an [Object], duck-typed.
 ## Per-game settings sit in the descriptor's metadata under a [code]vote[/code] key ([code]time_limit_sec[/code], [code]weight[/code], [code]nominate_only[/code], [code]group[/code]).
 
 const CHANNEL := "vote.games"
@@ -176,8 +176,8 @@ func _apply_meta(choice: DotVoteChoice, raw: Variant) -> void:
 		choice.description = str(settings["description"])
 
 	# min_players and max_players are read off the descriptor's own fields above,
-	# which dot-server already has — but a game whose SLOTS are 32 and which is no fun
-	# below 6 needs to say both, and only one of them is a dot-server concept.
+	# which GameSpice Server already has — but a game whose SLOTS are 32 and which is no fun
+	# below 6 needs to say both, and only one of them is a GameSpice Server concept.
 	if settings.has("min_players"):
 		choice.min_players = int(settings["min_players"])
 

@@ -52,7 +52,7 @@ var voters_fn: Callable = Callable()
 ## Says a line to everybody.
 var announce_fn: Callable = Callable()
 
-## Whether a voter is an admin, for dot-vote's admin bypasses.
+## Whether a voter is an admin, for GameSpice Vote's admin bypasses.
 var is_admin_fn: Callable = Callable()
 
 ## [code]func(state: Dictionary)[/code]: the ballot as a client draws it, sent when it changes.
@@ -62,7 +62,7 @@ var ballot_fn: Callable = Callable()
 var people_fn: Callable = Callable()
 
 ## [code]func() -> bool[/code]: whether a round is being played right now, not warmup or between
-## rounds. Handed to dot-vote so [code]time_up: finish_round[/code] holds a change only for a round in progress.
+## rounds. Handed to GameSpice Vote so [code]time_up: finish_round[/code] holds a change only for a round in progress.
 var round_in_progress_fn: Callable = Callable()
 
 var director: DotVoteDirector = null
@@ -74,7 +74,7 @@ var commands: DotVoteCommands = null
 var commands_spec_fn: Callable = Callable()
 
 ## `(id) -> bool` and `() -> Array`: maps.yml's active rotation, handed to the source so the pack
-## maps dot-vote merges are filtered and ordered like the game's own (dot-vote API level 12).
+## maps GameSpice Vote merges are filtered and ordered like the game's own (GameSpice Vote API level 12).
 var in_rotation_fn: Callable = Callable()
 var rotation_order_fn: Callable = Callable()
 var feed: DotVoteBallotFeed = null
@@ -114,7 +114,7 @@ func _build_source() -> void:
 	source.follow_content(
 		content_index if content_index != null else DotContentIndex.shared(),
 		_default_kinds() if accepted_kinds.is_empty() else accepted_kinds)
-	# By name, only where it exists: a delivered pack may run on an older shell dot-vote.
+	# By name, only where it exists: a delivered pack may run on an older shell GameSpice Vote.
 	if "in_rotation_fn" in source:
 		source.set(&"in_rotation_fn", in_rotation_fn)
 		source.set(&"rotation_order_fn", rotation_order_fn)
@@ -153,7 +153,7 @@ func _build_director() -> void:
 	# The server's tick drives it, not the frame clock.
 	director.self_advance = false
 	director.round_based = true
-	# Set by name, only where it exists: a delivered pack runs on the shell's dot-vote, and one older than API 3 has no
+	# Set by name, only where it exists: a delivered pack runs on the shell's GameSpice Vote, and one older than API 3 has no
 	# `round_in_progress_fn`. Read through this node's own field so host order does not matter.
 	if "round_in_progress_fn" in director:
 		director.set(&"round_in_progress_fn", func() -> bool:
@@ -214,7 +214,7 @@ func configured_rules() -> DotVoteRules:
 	return rules
 
 
-## What a one-map-per-round game wants from dot-vote by default. Every line is a default an
+## What a one-map-per-round game wants from GameSpice Vote by default. Every line is a default an
 ## operator overrides in [member config_path].
 func _rules() -> DotVoteRules:
 	var rules := DotVoteRules.new()
@@ -224,13 +224,13 @@ func _rules() -> DotVoteRules:
 	# A rocked vote changes the map at the round's end too. Immediately would take the
 	# furniture out from under every player in the middle of a round.
 	rules.rtv_apply = DotVoteRules.Apply.END_OF_ROUND
-	# No time limit: a map lasts a few rounds, and dot-vote's 45-minute default would expire
+	# No time limit: a map lasts a few rounds, and GameSpice Vote's 45-minute default would expire
 	# and change it under a round in progress.
 	rules.duration_sec = 0.0
 	# There is no clock to extend, and "this map again" is a fair thing to want when a
 	# server has two.
 	rules.include_extend = false
-	# Rock the vote from the first round: dot-vote's two minutes are longer than a round here and a rocked vote waits for
+	# Rock the vote from the first round: GameSpice Vote's two minutes are longer than a round here and a rocked vote waits for
 	# the round's end anyway (rtv_apply), so the delay made `!rtv` never work in the round people wanted to leave.
 	rules.rtv_delay_sec = 0.0
 	rules.include_current = true
@@ -336,8 +336,8 @@ func is_voting() -> bool:
 	return director != null and director.is_voting()
 
 
-## dot-vote's commands on [param host]: `vote`, `rtv`, `nominate` and the operator's. Voters
-## are the bare session id, the same spelling [member voters_fn] lists, dot-vote's default is
+## GameSpice Vote's commands on [param host]: `vote`, `rtv`, `nominate` and the operator's. Voters
+## are the bare session id, the same spelling [member voters_fn] lists, GameSpice Vote's default is
 ## `u<userid>`, and two spellings of one voter is a player who rocks the vote twice.
 func install_commands(host: Object) -> DotResult:
 	if director == null:

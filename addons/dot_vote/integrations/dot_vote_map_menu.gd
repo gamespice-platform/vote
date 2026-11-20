@@ -9,7 +9,7 @@ const CHANNEL := "vote.map_menu"
 
 const TOPIC := &"map_menu"
 const FLAG_CVAR := "sv_map_menu_flag"
-## dot-server's `DotAdminFlags.GENERIC`, spelled out (see [DotVoteCommands.admin_permission]).
+## GameSpice Server's `DotAdminFlags.GENERIC`, spelled out (see [DotVoteCommands.admin_permission]).
 const DEFAULT_FLAG := "generic"
 ## The value of `sv_map_menu_flag` that lets everybody change the map directly.
 const ANYONE := "anyone"
@@ -25,7 +25,7 @@ const DEFAULT_VOTE_MIN := 2
 ## nobody could page through.
 const MAX_ROWS := 2000
 
-## Encoded bytes of rows per notice, under dot-server's 8 KB `MAX_DATA_BYTES` with room for
+## Encoded bytes of rows per notice, under GameSpice Server's 8 KB `MAX_DATA_BYTES` with room for
 ## the rest of the answer. Found on a timer server with a few hundred maps: one notice of
 ## them all was over the limit and dropped whole, so M opened nothing.
 const PART_BYTES := 6500

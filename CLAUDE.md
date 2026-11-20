@@ -1,10 +1,10 @@
-# dot-vote
+# GameSpice Vote
 
 Voting for what plays next: one ballot engine over ids, with rock-the-vote, nominations, runoffs, weighting, cooldowns, time, round and score limits, and the extend rules, for a server's next map or its next game.
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is specific to this addon.
 
-**Only dot-core is a dependency, at API level 16 or later (`DotAddonConfig.apply_file`).** dot-map and dot-server are optional, reached by `load()` and `call()`, and linked (`.gitignore`) only so the suite's integration sections can run against the real thing.
+**Only GameSpice Core is a dependency, at API level 16 or later (`DotAddonConfig.apply_file`).** GameSpice Map and GameSpice Server are optional, reached by `load()` and `call()`, and linked (`.gitignore`) only so the suite's integration sections can run against the real thing.
 
 ## Read before
 
@@ -20,7 +20,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 | --- | --- |
 | `addons/dot_vote/core/` | `DotVoteChoice` (an id, a name, a ballot's facts), `DotVoteResult`, `DotVoteRules` (every policy, a `DotConfig`) |
 | `addons/dot_vote/runtime/` | `DotVoteDirector` (the engine), `DotVoteBallot`, `DotVoteClock`, `DotVoteNominations`, `DotVoteHistory`, `DotVoteSource` / `DotVoteListSource`, and the client views `DotVoteClockView`, `DotVoteBallotView`, `DotVoteBallotFeed` |
-| `addons/dot_vote/integrations/` | `DotVoteCommands`, `DotVoteMapMenu` (the M menu's server half, installed with the commands), `DotVoteMapSource` (dot-map), `DotVoteGameSource` (dot-server's `DotGameManager`), `DotVoteRoundGame` (a round-based game's next-map vote, extended by the game), `DotVoteTimedGame` (the vote of a game on a clock, extended by the game) |
+| `addons/dot_vote/integrations/` | `DotVoteCommands`, `DotVoteMapMenu` (the M menu's server half, installed with the commands), `DotVoteMapSource` (GameSpice Map), `DotVoteGameSource` (GameSpice Server's `DotGameManager`), `DotVoteRoundGame` (a round-based game's next-map vote, extended by the game), `DotVoteTimedGame` (the vote of a game on a clock, extended by the game) |
 | `addons/dot_vote/runtime/dot_vote_bans.gd`, `dot_vote_ban_rules.gd` | `DotVoteBans` (a yes/no vote to ban one player; `start`, `vote`, `ban_fn`) and its `sv_voteban*` cvars. [design](docs/design.md#votebans) |
 | `examples/vote_selftest.tscn` | the suite; `examples/fixtures/` its data |
 
@@ -34,7 +34,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 - A choice is an id plus metadata, never a `DotGameDescriptor` or a map; sources are duck-typed; per-choice settings live in the thing's own metadata under `vote`. [design](docs/design.md#the-one-design-decision)
 - Every `DotVoteRules` setting must be read by something; the suite's sweep checks it, and a setting read in two branches that behave the same is the same bug. [history](docs/history.md#building-it)
-- Never name dot-server or dot-map classes; spell their constants out (`admin_permission = "changemap"` is `DotAdminFlags.CHANGEMAP`). [history](docs/history.md#the-parity-work)
+- Never name GameSpice Server or GameSpice Map classes; spell their constants out (`admin_permission = "changemap"` is `DotAdminFlags.CHANGEMAP`). [history](docs/history.md#the-parity-work)
 - `DotVoteClock` latches when it fires, so a `vote_due` that cannot open is retried (`_vote_due_pending`), never dropped. [history](docs/history.md#building-it)
 - A `start_vote` refused only for `busy_fn` is owed, not dropped; `open_vote` is refused outright. [history](docs/history.md#later)
 - `elapsed` counts on a clock with no limit; rock-the-vote timing depends on it. [history](docs/history.md#building-it)
@@ -87,4 +87,4 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 | How a command context becomes a voter | `DotVoteCommands.voter_fn` |
 | How what a player typed becomes a choice id | `DotVoteCommands.resolve_fn` (a game whose ids carry a prefix) |
 
-Deliberately not here: a wire format, UI, persistence, per-choice permissions, drawing or playing anything, a dot-audio dependency. [design](docs/design.md#deliberately-not-here)
+Deliberately not here: a wire format, UI, persistence, per-choice permissions, drawing or playing anything, a GameSpice Audio dependency. [design](docs/design.md#deliberately-not-here)

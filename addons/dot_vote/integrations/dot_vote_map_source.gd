@@ -2,8 +2,8 @@ class_name DotVoteMapSource
 extends DotVoteSource
 
 ## Votes over the maps in a [code]DotMapCatalogue[/code].
-## Same shape as [DotVoteGameSource], naming no dot-map class; the catalogue and session are duck-typed.
-## It does not replace dot-map's own [code]DotMapVote[/code]; it is for runoffs, quorums, per-map limits and the other [DotVoteRules] settings. Per-map settings sit in the map's [code]meta.vote[/code].
+## Same shape as [DotVoteGameSource], naming no GameSpice Map class; the catalogue and session are duck-typed.
+## It does not replace GameSpice Map's own [code]DotMapVote[/code]; it is for runoffs, quorums, per-map limits and the other [DotVoteRules] settings. Per-map settings sit in the map's [code]meta.vote[/code].
 
 const CHANNEL := "vote.maps"
 

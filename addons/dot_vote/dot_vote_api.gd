@@ -1,6 +1,6 @@
 extends RefCounted
 
-## dot-vote's API level; the bumping rule is on [DotAddonApi].
+## GameSpice Vote's API level; the bumping rule is on [DotAddonApi].
 ## LEVEL rises for anything new a game could call; OLDEST is raised when something callable is removed or changes meaning.
 
 # 1: everything before this file existed (an absent file reads as 1).
@@ -24,13 +24,13 @@ extends RefCounted
 # 10: DotVoteListSource.follow_content(index, accepted_kinds) and DotVoteChoice.pack_title and
 #     label() ("Name [Pack]"), which every ballot, menu and message prints.
 # 11: DotVoteCommands names that take lists (aliases), spec_fn, chat_prefix, skipped, typed;
-#     DotVoteGameSource.order; DotVoteMapSource skips maps outside the rotation. Needs dot-core
+#     DotVoteGameSource.order; DotVoteMapSource skips maps outside the rotation. Needs GameSpice Core
 #     API level 12 (DotCommandNames).
 # 12: DotVoteListSource.in_rotation_fn and rotation_order_fn: the rotation filter and order
 #     apply to every choice, the maps merged by follow_content included.
 # 13: DotVoteRules.apply_cfg_file and load_cfg read cfg/addons/dot_vote/<file>.yml and the
 #     operator's cfg/server/addons/dot_vote/, with the flat cfg/<file>.yml as a shim.
-#     Needs dot-core API level 16 (DotAddonConfig.apply_file).
+#     Needs GameSpice Core API level 16 (DotAddonConfig.apply_file).
 # 15: DotVoteRoundGame, the next-map vote of a round-based game (director, list source, feed,
 #     commands, when the ballot opens) once; a game extends it and sets its names.
 # 16: DotVoteRoundGame hooks a game overrides: _apply, _ballot_may_open, _map_noted, _ticked; the

@@ -5,9 +5,9 @@ Let players, rather than a rotation, decide what plays next: games, maps or mode
 ## Install
 
 1. Get [Godot 4.7](https://godotengine.org/download).
-2. Either use [dot-bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons, or copy `addons/dot_vote/` and [dot-core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable dot-vote in *Project > Project Settings > Plugins*.
+2. Either use [GameSpice Bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons, or copy `addons/dot_vote/` and [GameSpice Core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable dot-vote in *Project > Project Settings > Plugins*.
 
-dot-core is the only dependency. [dot-server](https://github.com/gamespice-platform/server) and [dot-map](https://github.com/gamespice-platform/map) are optional and are reached without being imported.
+GameSpice Core is the only dependency. [GameSpice Server](https://github.com/gamespice-platform/server) and [GameSpice Map](https://github.com/gamespice-platform/map) are optional and are reached without being imported.
 
 ## Use
 
@@ -39,7 +39,7 @@ Everything else is configuration.
 | Cooldowns | In plays or minutes, per choice, kept from excluding the whole pool. |
 | Applying | Immediately, at round end or when the clock runs out, with a delay so players can read the result. |
 | Cues | Countdown signals and sound cue ids. The host plays them. |
-| Commands | `nominate`, `rtv`, `votefor`, `timeleft`, `nextmap`, `revote`, `extend`, `endvote`, `setnextmap`, `nominate_addmap`, `forcertv`, `votereload` and more, on a dot-server console and in chat. Names are configurable; admin ones need the `changemap` flag. |
+| Commands | `nominate`, `rtv`, `votefor`, `timeleft`, `nextmap`, `revote`, `extend`, `endvote`, `setnextmap`, `nominate_addmap`, `forcertv`, `votereload` and more, on a GameSpice Server console and in chat. Names are configurable; admin ones need the `changemap` flag. |
 
 ## The pieces
 
@@ -52,7 +52,7 @@ Everything else is configuration.
 | `DotVoteClock` | The limit, warnings, extends and rock-the-vote. |
 | `DotVoteClockView` | The clock as a client shows it. |
 | `DotVoteBallot` | The open ballot and the counting methods. |
-| `DotVoteBallotView`, `DotVoteBallotFeed` | The ballot as a client draws it, and a feed that sends it only when it changed. [dot-ui](https://github.com/gamespice-platform/ui)'s `DotBallotPanel` draws it. |
+| `DotVoteBallotView`, `DotVoteBallotFeed` | The ballot as a client draws it, and a feed that sends it only when it changed. [GameSpice UI](https://github.com/gamespice-platform/ui)'s `DotBallotPanel` draws it. |
 | `DotVoteNominations` | What players have asked for, in order. |
 | `DotVoteHistory` | What has been played and what is on cooldown. |
 | `DotVoteResult` | What was decided, and how, including which tie-break. |
@@ -130,7 +130,7 @@ A result that does not validate is refused whole, and the game keeps its own def
 
 ## Testing
 
-Import the project once, then run `examples/vote_selftest.tscn` headless with Godot. It runs against a real `DotGameManager` and `DotMapCatalogue` when dot-server and dot-map are linked in. Further notes: [docs/design.md](docs/design.md), [docs/history.md](docs/history.md).
+Import the project once, then run `examples/vote_selftest.tscn` headless with Godot. It runs against a real `DotGameManager` and `DotMapCatalogue` when GameSpice Server and GameSpice Map are linked in. Further notes: [docs/design.md](docs/design.md), [docs/history.md](docs/history.md).
 
 ## Status and licence
 

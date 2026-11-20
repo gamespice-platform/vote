@@ -122,7 +122,7 @@ func _rtv_director(rules: DotVoteRules, applied: Array) -> DotVoteDirector:
 	return director
 
 
-## What every MANUAL game did by hand until dot-vote opened a rocked ballot itself:
+## What every MANUAL game did by hand until GameSpice Vote opened a rocked ballot itself:
 func _game_rtv_workaround(director: DotVoteDirector, attempts: Array) -> void:
 	director.clock.expired.connect(func(reason: StringName) -> void:
 		if reason != DotVoteClock.REASON_RTV or director.is_voting():
@@ -138,7 +138,7 @@ func _manual_rules() -> DotVoteRules:
 	return rules
 
 
-## Stands in for a dot-server [code]DotServer[/code]: the one signal and the one question
+## Stands in for a GameSpice Server [code]DotServer[/code]: the one signal and the one question
 ## [method DotVoteDirector.follow_hibernation] duck-types. The real one is followed in the
 ## real game manager's section.
 class FakeHibernatingServer extends Node:
