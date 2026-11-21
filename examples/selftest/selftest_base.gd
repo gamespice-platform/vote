@@ -2,7 +2,7 @@ extends Node
 
 ## The suite's harness: counters, [method _check], [method _section]; the test layers extend it.
 
-const DATA := "user://dot_vote_selftest"
+const DATA := "user://gs_vote_selftest"
 
 var _passed := 0
 var _failed := 0

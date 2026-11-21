@@ -5,11 +5,11 @@ extends Node
 ## [member metadata_key], [member config_path] and [member command_names] in [code]_init[/code], overrides [method _default_kinds] for the Workshop `map_kind`s it plays, and may override [method _rules].
 ## A ballot opens [member open_after_sec] into the LAST round on a map ([member due_fn]) and applies at its end; `trigger` is MANUAL because ROUND_END applies a round late. Server side only: a client draws the notice from [member ballot_fn].
 
-## The dot-vote API level at which the director opens a rocked vote itself under MANUAL.
+## The gs-vote API level at which the director opens a rocked vote itself under MANUAL.
 const RTV_OPENS_IN_DIRECTOR_LEVEL := 2
 
 ## The log channel, e.g. "prophunt.vote".
-var channel: String = "dot_vote.round_game"
+var channel: String = "gs_vote.round_game"
 
 ## The key in the running game's descriptor metadata an operator's overrides are read from
 ## ([code]metadata: map_vote:[/code] in a delivered game's [code]game.yml[/code]).
@@ -25,7 +25,7 @@ var noun: String = "map"
 ## while hiding, early enough that a short round still sees it close.
 @export var open_after_sec: float = 20.0
 
-## The file a server owner configures the vote in, keyed as [GSVoteRules]: [code]_rules() < game.yml metadata < this file < DOT_VOTE_* < --vote-*[/code].
+## The file a server owner configures the vote in, keyed as [GSVoteRules]: [code]_rules() < game.yml metadata < this file < GS_VOTE_* < --vote-*[/code].
 ## Empty skips the file; [code]{"enabled": false}[/code] turns the vote off and the rotation decides alone.
 @export var config_path: String = ""
 
@@ -172,10 +172,10 @@ func _build_director() -> void:
 
 
 func _wire_director() -> void:
-	# From dot-vote API level 2 the director opens a rocked vote itself under MANUAL, and a second start_vote here would be refused.
+	# From gs-vote API level 2 the director opens a rocked vote itself under MANUAL, and a second start_vote here would be refused.
 	# Below it (an older shell under a delivered pack) `!rtv` answered "Rocked." and nothing happened, so only there this game opens it,
 	# connected after the director's handler. Any round, not only the last on a map: rocking is the players asking now.
-	if GSAddonApi.build_level("dot_vote") < RTV_OPENS_IN_DIRECTOR_LEVEL:
+	if GSAddonApi.build_level("gs_vote") < RTV_OPENS_IN_DIRECTOR_LEVEL:
 		director.clock.expired.connect(func(reason: StringName) -> void:
 			if reason != GSVoteClock.REASON_RTV or director.is_voting():
 				return

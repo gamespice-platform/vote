@@ -6,7 +6,7 @@ extends Node
 ## [member config_path] in [code]_init[/code], and overrides [method _rules] (its defaults, usually a TIME_LIMIT), [method _make_source] (when its choices are not a list), [method _configure_director] and [method _voters].
 
 ## The log channel, e.g. "delivery.vote".
-var channel: String = "dot_vote.timed_game"
+var channel: String = "gs_vote.timed_game"
 
 ## The key in the running game's descriptor metadata an operator's overrides are read from
 ## ([code]metadata: mountain_vote:[/code] in a delivered game's [code]game.yml[/code]).
@@ -19,14 +19,14 @@ var command_names: Dictionary = {"vote": "vote"}
 var noun: String = "map"
 
 ## The file a server owner configures the vote in, keyed as [GSVoteRules]:
-## [code]_rules() < game.yml metadata < this file < DOT_VOTE_* < --vote-*[/code]. Empty skips the file; [code]{"enabled": false}[/code] turns the vote off.
+## [code]_rules() < game.yml metadata < this file < GS_VOTE_* < --vote-*[/code]. Empty skips the file; [code]{"enabled": false}[/code] turns the vote off.
 @export var config_path: String = ""
 
 ## Whether the director applies a winner itself. A host that must change the map through its own path (to tell clients) turns it off and
 ## acts on [signal change_due].
 var auto_apply: bool = true
 
-## Whether the director registers as the `dot_vote_director` service. One ballot per screen is the host's to arrange, so off by default.
+## Whether the director registers as the `gs_vote_director` service. One ballot per screen is the host's to arrange, so off by default.
 var register_service: bool = false
 
 ## Whether settings this game cannot drive (a round-end trigger, a score limit) are taken out of an operator's file: no round end and no score
@@ -92,7 +92,7 @@ signal vote_closed(result: GSVoteResult)
 signal rocked(voter: StringName, votes: int, needed: int)
 signal change_due(id: StringName, choice: GSVoteChoice)
 
-## A cue to play, or a countdown second ([param cue] empty): dot-vote emits the two separately and merging them here would decide which is which.
+## A cue to play, or a countdown second ([param cue] empty): gs-vote emits the two separately and merging them here would decide which is which.
 signal cue_due(cue: StringName, seconds_left: int, runoff: bool)
 
 ## The clock as a client must count it, sent only when a client's own count would be wrong (an extend, a new map, a stopped clock).

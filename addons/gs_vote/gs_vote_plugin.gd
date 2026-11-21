@@ -4,13 +4,13 @@ extends EditorPlugin
 ## Editor entry point for GameSpice Vote. Registers inspector types only.
 ## No autoloads: a test with a server and a client in one process, or a server voting over games and maps, needs two directors.
 
-const _ICON := "res://addons/dot_vote/icon_placeholder.svg"
+const _ICON := "res://addons/gs_vote/icon_placeholder.svg"
 
 const _TYPES := [
 	[
 		"GSVoteDirector",
 		"Node",
-		"res://addons/dot_vote/runtime/dot_vote_director.gd",
+		"res://addons/gs_vote/runtime/gs_vote_director.gd",
 	],
 ]
 

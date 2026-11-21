@@ -94,11 +94,11 @@ func _test_describe() -> void:
 
 
 func _test_cfg_layout() -> void:
-	_section("vote.yml: cfg/addons/dot_vote wins over the flat file, cfg/server/addons/dot_vote wins over both")
+	_section("vote.yml: cfg/addons/gs_vote wins over the flat file, cfg/server/addons/gs_vote wins over both")
 
 	var legacy := DATA.path_join("legacy_cfg")
-	var addon_dir := "user://cfg/addons/dot_vote"
-	var server_dir := "user://cfg/server/addons/dot_vote"
+	var addon_dir := "user://cfg/addons/gs_vote"
+	var server_dir := "user://cfg/server/addons/gs_vote"
 	GSPaths.remove_tree(addon_dir)
 	GSPaths.remove_tree(server_dir)
 	GSCfgLegacy.reset()
@@ -137,12 +137,12 @@ func _test_cfg_layout() -> void:
 	GSPaths.remove_tree(server_dir)
 	GSPaths.remove_tree(legacy)
 	GSCfgLegacy.reset()
-	_write_text("user://cfg/server/dot_vote/vote.yml", "duration_sec: 1700\n")
+	_write_text("user://cfg/server/gs_vote/vote.yml", "duration_sec: 1700\n")
 	rules = GSVoteRules.new()
 	res = rules.load_cfg("vote.yml", legacy)
-	_check(res.ok and is_equal_approx(rules.duration_sec, 1700.0), "the old cfg/server/dot_vote/ still loads")
+	_check(res.ok and is_equal_approx(rules.duration_sec, 1700.0), "the old cfg/server/gs_vote/ still loads")
 	_check(GSCfgLegacy.warned_count() == 1, "and warns once")
-	GSPaths.remove_tree("user://cfg/server/dot_vote")
+	GSPaths.remove_tree("user://cfg/server/gs_vote")
 	GSCfgLegacy.reset()
 	_done()
 
@@ -643,7 +643,7 @@ func _test_every_layer_reaches_a_ballot() -> void:
 	for case: Array in cases:
 		var key: String = case[0]
 
-		for layer in ["game.yml metadata", "the JSON file", "DOT_VOTE_*", "--vote-*"]:
+		for layer in ["game.yml metadata", "the JSON file", "GS_VOTE_*", "--vote-*"]:
 			var extra := PackedStringArray()
 			var env := {}
 
@@ -655,8 +655,8 @@ func _test_every_layer_reaches_a_ballot() -> void:
 					f.store_string(JSON.stringify({key: case[2]}))
 					f.close()
 					extra.append("--probe-file=" + file_path)
-				"DOT_VOTE_*":
-					env["DOT_VOTE_" + key.to_upper()] = case[1]
+				"GS_VOTE_*":
+					env["GS_VOTE_" + key.to_upper()] = case[1]
 				"--vote-*":
 					extra.append("--vote-%s=%s" % [key, case[1]])
 

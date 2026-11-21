@@ -36,7 +36,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-vote self-test")
+	print("gs-vote self-test")
 
 	GSPaths.remove_tree(DATA)
 

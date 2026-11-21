@@ -5,7 +5,7 @@ Let players, rather than a rotation, decide what plays next: games, maps or mode
 ## Install
 
 1. Get [Godot 4.7](https://godotengine.org/download).
-2. Either use [GameSpice Bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons, or copy `addons/dot_vote/` and [GameSpice Core](https://github.com/gamespice-platform/core)'s `addons/dot_core/` into your project and enable dot-vote in *Project > Project Settings > Plugins*.
+2. Either use [GameSpice Bootstrap](https://github.com/gamespice-platform/bootstrap), which clones every project and links the addons, or copy `addons/gs_vote/` and [GameSpice Core](https://github.com/gamespice-platform/core)'s `addons/gs_core/` into your project and enable gs-vote in *Project > Project Settings > Plugins*.
 
 GameSpice Core is the only dependency. [GameSpice Server](https://github.com/gamespice-platform/server) and [GameSpice Map](https://github.com/gamespice-platform/map) are optional and are reached without being imported.
 
@@ -45,7 +45,7 @@ Everything else is configuration.
 
 | Class | What it is |
 | --- | --- |
-| `GSVoteRules` | Every policy decision, as one `GSConfig`: defaults, then file, then `DOT_VOTE_*`, then `--vote-*`. Enum settings are written by name (`method: instant_runoff`). |
+| `GSVoteRules` | Every policy decision, as one `GSConfig`: defaults, then file, then `GS_VOTE_*`, then `--vote-*`. Enum settings are written by name (`method: instant_runoff`). |
 | `GSVoteChoice` | One thing to vote for: id, name, player counts, its own time limit, cooldown and weight. |
 | `GSVoteSource` | Where choices come from and what "play this" means. |
 | `GSVoteDirector` | The `Node` that joins them, driven by `advance(delta)`. |
@@ -60,8 +60,8 @@ Everything else is configuration.
 ## Choices
 
 ```gdscript
-GSVoteGameSource.of(server.games)          # dot-server's games
-GSVoteMapSource.of(catalogue, session)     # dot-map's maps
+GSVoteGameSource.of(server.games)          # gs-server's games
+GSVoteMapSource.of(catalogue, session)     # gs-map's maps
 GSVoteListSource.of(my_choices)            # anything else, with a Callable
 ```
 
@@ -114,7 +114,7 @@ apply: end_of_round
 apply_delay_sec: 5
 ```
 
-An operator's file lives in `cfg/addons/dot_vote/vote.yml`, with `cfg/server/addons/dot_vote/` layered over it. Defaults you can see in code: `max_options` 6, `nomination_slots` 4, `max_extends` 3. [docs/parity.md](docs/parity.md) maps the settings, commands and hooks of the long-standing community map-chooser plugins onto these.
+An operator's file lives in `cfg/addons/gs_vote/vote.yml`, with `cfg/server/addons/gs_vote/` layered over it. Defaults you can see in code: `max_options` 6, `nomination_slots` 4, `max_extends` 3. [docs/parity.md](docs/parity.md) maps the settings, commands and hooks of the long-standing community map-chooser plugins onto these.
 
 A game that builds its rules in code can layer an operator's file over them:
 

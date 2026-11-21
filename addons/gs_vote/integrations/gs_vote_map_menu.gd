@@ -30,7 +30,7 @@ const MAX_ROWS := 2000
 ## them all was over the limit and dropped whole, so M opened nothing.
 const PART_BYTES := 6500
 
-const NOTICE_SCRIPT := "res://addons/dot_server/net/dot_notice.gd"
+const NOTICE_SCRIPT := "res://addons/gs_server/net/gs_notice.gd"
 
 ## The commands this belongs to, held weakly: they hold this ([member GSVoteCommands.map_menu]),
 ## and two RefCounted holding each other are never freed.
@@ -56,7 +56,7 @@ var vote_min: int = DEFAULT_VOTE_MIN
 var vote_min_cvar: Object = null
 
 ## `func() -> int`: how many humans are playing. Unset counts the playing sessions of the
-## server registered as `dot_server` (bots are not sessions). A game whose own count is the
+## server registered as `gs_server` (bots are not sessions). A game whose own count is the
 ## better answer sets it; it must never count a bot.
 var humans_fn: Callable = Callable()
 
@@ -72,7 +72,7 @@ var mode_fn: Callable = Callable()
 var rows_fn: Callable = Callable()
 
 ## `func(ctx: Object, data: Dictionary) -> bool`: how the answer reaches the player. Unset
-## sends a `map_menu` notice through the server registered as `dot_server`.
+## sends a `map_menu` notice through the server registered as `gs_server`.
 var notice_fn: Callable = Callable()
 
 ## What the picker's heading calls this place.
@@ -165,7 +165,7 @@ func min_voters() -> int:
 func humans() -> int:
 	if humans_fn.is_valid():
 		return int(humans_fn.call())
-	var server: Object = GSRegistry.get_service(&"dot_server")
+	var server: Object = GSRegistry.get_service(&"gs_server")
 	if server != null and server.has_method("playing_sessions"):
 		return (server.call("playing_sessions") as Array).size()
 	return -1
@@ -429,7 +429,7 @@ func _send(ctx: Object, data: Dictionary) -> bool:
 	var session: Variant = ctx.get("session")
 	if not (session is Object) or not ResourceLoader.exists(NOTICE_SCRIPT):
 		return false
-	var server: Object = GSRegistry.get_service(&"dot_server")
+	var server: Object = GSRegistry.get_service(&"gs_server")
 	if server == null or not server.has_method("send_notice"):
 		return false
 	var notice: Object = (load(NOTICE_SCRIPT) as GDScript).call("make", &"", "", -1.0, TOPIC, data)

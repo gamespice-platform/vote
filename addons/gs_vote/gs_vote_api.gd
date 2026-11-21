@@ -28,8 +28,8 @@ extends RefCounted
 #     API level 12 (GSCommandNames).
 # 12: GSVoteListSource.in_rotation_fn and rotation_order_fn: the rotation filter and order
 #     apply to every choice, the maps merged by follow_content included.
-# 13: GSVoteRules.apply_cfg_file and load_cfg read cfg/addons/dot_vote/<file>.yml and the
-#     operator's cfg/server/addons/dot_vote/, with the flat cfg/<file>.yml as a shim.
+# 13: GSVoteRules.apply_cfg_file and load_cfg read cfg/addons/gs_vote/<file>.yml and the
+#     operator's cfg/server/addons/gs_vote/, with the flat cfg/<file>.yml as a shim.
 #     Needs GameSpice Core API level 16 (GSAddonConfig.apply_file).
 # 15: GSVoteRoundGame, the next-map vote of a round-based game (director, list source, feed,
 #     commands, when the ballot opens) once; a game extends it and sets its names.

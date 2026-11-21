@@ -1,5 +1,5 @@
 @tool
-extends "res://addons/dot_vote/runtime/dot_vote_director_query.gd"
+extends "res://addons/gs_vote/runtime/gs_vote_director_query.gd"
 
 ## Nominations, rock-the-vote and the pending change of [GSVoteDirector], kept apart so each file stays readable.
 

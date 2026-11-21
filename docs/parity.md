@@ -2,7 +2,7 @@
 
 Servers in this genre have run the same three plugins for fifteen years: a map chooser (the end-of-map ballot), a rock-the-vote, and nominations, plus a fourth that plays sounds over the first. Every setting, command, query and event those four expose is listed below against what covers it here — so a server owner who knows the old cvar can find the new setting, and so a gap is a row that says so rather than a feature nobody noticed was missing.
 
-The old names are kept only as a lookup key. Nothing here reads them: every setting is a `GSVoteRules` field, layered `defaults < file < DOT_VOTE_* < --vote-*`, enums by name.
+The old names are kept only as a lookup key. Nothing here reads them: every setting is a `GSVoteRules` field, layered `defaults < file < GS_VOTE_* < --vote-*`, enums by name.
 
 Legend: **have** — it was already here; **new** — added for parity; **different** — covered, deliberately in another shape; **not** — deliberately not here, with the reason.
 
@@ -125,4 +125,4 @@ The table was read row by row against the plugins' `.sp` files. Three rows were 
 | The version cvars | **not**: an addon's version is its `plugin.cfg`. |
 | A tie for first always goes to a runoff, whatever the runoff percentage | Stated here because the table did not say it outright: see the runoff rows above for what `runoff_*` does on a tie. |
 
-**What reaches a running ballot, per layer.** `vote_selftest`'s "every config layer reaches a running ballot" sets `end_vote`, `include_extend` and `extend_seconds` through the game's metadata overlay, the JSON file, `DOT_VOTE_*` and `--vote-*`, each in a child process (`examples/layer_probe.gd`, because the command line is the process's own), and asserts the ballot: none opened, no Extend on it, the clock moved by the layered number. GameSpice Server Deploy's own layers (`cfg/addons/dot_vote/vote.yml`, formerly `cfg/vote.yml`, `DOT_GAME_VOTE_*`, `--game-vote-*`) feed the game vote there and are not covered by this.
+**What reaches a running ballot, per layer.** `vote_selftest`'s "every config layer reaches a running ballot" sets `end_vote`, `include_extend` and `extend_seconds` through the game's metadata overlay, the JSON file, `GS_VOTE_*` and `--vote-*`, each in a child process (`examples/layer_probe.gd`, because the command line is the process's own), and asserts the ballot: none opened, no Extend on it, the clock moved by the layered number. GameSpice Server Deploy's own layers (`cfg/addons/gs_vote/vote.yml`, formerly `cfg/vote.yml`, `GS_GAME_VOTE_*`, `--game-vote-*`) feed the game vote there and are not covered by this.

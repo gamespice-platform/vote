@@ -1,6 +1,6 @@
 # comments
 # Baselines only shrink: scripts/<gate> --update lowers or drops entries and refuses to add.
-addons/dot_vote/dot_vote_api.gd::long_block	1
-addons/dot_vote/runtime/dot_vote_list_source.gd::commented_code	1
+addons/gs_vote/gs_vote_api.gd::long_block	1
+addons/gs_vote/runtime/gs_vote_list_source.gd::commented_code	1
 examples/layer_probe.gd::long_block	1
 examples/vote_selftest.gd::long_block	1

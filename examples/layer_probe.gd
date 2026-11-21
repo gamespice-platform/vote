@@ -15,7 +15,7 @@ extends SceneTree
 ## [/codeblock]
 ##
 ## The overlay is what a game passes from its game.yml `metadata: map_vote:`; the file is
-## `user://cfg/<game>_vote.json`'s place; `DOT_VOTE_*` is read from the environment it is
+## `user://cfg/<game>_vote.json`'s place; `GS_VOTE_*` is read from the environment it is
 ## started with. Everything the ballot needs to be driven by hand is set AFTER layering and
 ## is none of the three settings under test.
 

@@ -4,7 +4,7 @@ extends Node
 ## The signals, enums, settings and state of [GSVoteDirector], kept apart so each file stays readable.
 
 const CHANNEL := "vote"
-const SERVICE := &"dot_vote_director"
+const SERVICE := &"gs_vote_director"
 
 ## The ballot is open. [param options] is every votable id, in ballot order.
 signal vote_opened(options: Array, seconds: float)

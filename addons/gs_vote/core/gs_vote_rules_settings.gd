@@ -7,8 +7,8 @@ extends GSConfig
 ## redeclares a parent's member does not parse.
 const RULES_CHANNEL := "vote.rules"
 
-## The addon name [GSAddonConfig] turns into the folder `dot_vote`.
-const CFG_ADDON := "dot-vote"
+## The addon name [GSAddonConfig] turns into the folder `gs_vote`.
+const CFG_ADDON := "gs-vote"
 
 ## When a vote happens at all.
 enum Trigger {

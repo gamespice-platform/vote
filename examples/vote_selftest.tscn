@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://dotvote0selftest"]
+[gd_scene load_steps=2 format=3 uid="uid://gsvote0selftest"]
 
 [ext_resource type="Script" path="res://examples/vote_selftest.gd" id="1_vs"]
 

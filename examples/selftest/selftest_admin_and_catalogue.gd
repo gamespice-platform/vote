@@ -219,26 +219,26 @@ func _test_admin_and_queries_4() -> void:
 ## A real GameSpice Server game manager, voted over and actually changed.
 ## Objects are built reflectively, the path [GSVoteGameSource] takes, so wrong duck typing fails here.
 func _test_real_game_manager() -> void:
-	_section("A real dot-server game manager, voted over and actually changed")
+	_section("A real gs-server game manager, voted over and actually changed")
 
-	if not ResourceLoader.exists("res://addons/dot_server/server/dot_server.gd"):
+	if not ResourceLoader.exists("res://addons/gs_server/server/gs_server.gd"):
 		# Said out loud rather than skipped quietly. "0 failures" from a suite that ran
 		# nothing is how a family ships two ends that never met.
 		_check(
 			false,
-			"dot-server is present so the game vote can be run",
-			"addons/dot_server is not linked; this integration is NOT covered"
+			"gs-server is present so the game vote can be run",
+			"addons/gs_server is not linked; this integration is NOT covered"
 		)
 		_done()
 		return
 
-	var config_script: GDScript = load("res://addons/dot_server/server/dot_server_config.gd")
+	var config_script: GDScript = load("res://addons/gs_server/server/gs_server_config.gd")
 	var config: Object = config_script.new()
-	config.set("hostname", "dot-vote self-test")
+	config.set("hostname", "gs-vote self-test")
 	config.set("port", 27531)
 	config.set("max_players", 8)
 	config.set("tickrate", 30)
-	config.set("rcon_password", "dot-vote-selftest-rcon-password")
+	config.set("rcon_password", "gs-vote-selftest-rcon-password")
 	config.set("a2s_enabled", false)
 	config.set("query_enabled", false)
 	config.set("hibernate_when_empty", false)
@@ -250,7 +250,7 @@ func _test_real_game_manager() -> void:
 	config.set("startup_config", "")
 	config.set("autoexec_config", "")
 
-	var server_script: GDScript = load("res://addons/dot_server/server/dot_server.gd")
+	var server_script: GDScript = load("res://addons/gs_server/server/gs_server.gd")
 	_v_real_game_manager_server = server_script.new()
 	_v_real_game_manager_server.name = "Server"
 	_v_real_game_manager_server.set("config", config)
@@ -270,7 +270,7 @@ func _test_real_game_manager() -> void:
 		return
 
 	_v_real_game_manager_descriptor_script = load(
-		"res://addons/dot_server/game/dot_game_descriptor.gd"
+		"res://addons/gs_server/game/gs_game_descriptor.gd"
 	)
 	_v_real_game_manager_games = _v_real_game_manager_server.get("games")
 
@@ -427,7 +427,7 @@ func _test_real_game_manager_4() -> void:
 	)
 
 	var ctx_script: GDScript = load(
-		"res://addons/dot_server/console/dot_cmd_context.gd"
+		"res://addons/gs_server/console/gs_cmd_context.gd"
 	)
 	var ctx: Object = ctx_script.new()
 	ctx.set("reply_sink", func(text: String) -> void: replies.append(text))
@@ -474,20 +474,20 @@ func _test_real_game_manager_4() -> void:
 
 ## A real GameSpice Map catalogue and session, voted over and actually changed.
 func _test_real_map_catalogue() -> void:
-	_section("A real dot-map catalogue, voted over and actually changed")
+	_section("A real gs-map catalogue, voted over and actually changed")
 
-	if not ResourceLoader.exists("res://addons/dot_map/core/dot_map_catalogue.gd"):
+	if not ResourceLoader.exists("res://addons/gs_map/core/gs_map_catalogue.gd"):
 		_check(
 			false,
-			"dot-map is present so the map vote can be run",
-			"addons/dot_map is not linked; this integration is NOT covered"
+			"gs-map is present so the map vote can be run",
+			"addons/gs_map is not linked; this integration is NOT covered"
 		)
 		_done()
 		return
 
-	var def_script: GDScript = load("res://addons/dot_map/core/dot_map_def.gd")
+	var def_script: GDScript = load("res://addons/gs_map/core/gs_map_def.gd")
 	var catalogue_script: GDScript = load(
-		"res://addons/dot_map/core/dot_map_catalogue.gd"
+		"res://addons/gs_map/core/gs_map_catalogue.gd"
 	)
 	_v_real_map_catalogue_catalogue = catalogue_script.new()
 
@@ -505,7 +505,7 @@ func _test_real_map_catalogue() -> void:
 		_v_real_map_catalogue_catalogue.call("add", map)
 
 	var session_script: GDScript = load(
-		"res://addons/dot_map/runtime/dot_map_session.gd"
+		"res://addons/gs_map/runtime/gs_map_session.gd"
 	)
 	_v_real_map_catalogue_session = session_script.new()
 	_v_real_map_catalogue_session.name = "Maps"
@@ -683,7 +683,7 @@ func _real_game_manager_commands(
 	_check(
 		renamed.command_name("rtv") == "sv_rockthevote",
 		"every command name is configurable (%s)" % renamed.command_name("rtv"),
-		"dot-server already ships a `vote`, and a timer server's players type !rtv"
+		"gs-server already ships a `vote`, and a timer server's players type !rtv"
 	)
 
 	# Aliases, a file-supplied block, and a collision that is a skip and never a steal.

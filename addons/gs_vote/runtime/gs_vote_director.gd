@@ -1,6 +1,6 @@
 @tool
 class_name GSVoteDirector
-extends "res://addons/dot_vote/runtime/dot_vote_director_ballot.gd"
+extends "res://addons/gs_vote/runtime/gs_vote_director_ballot.gd"
 
 ## The node a game adds: the clock, the nominations, the ballot and the change, driven by one call per tick (see docs/design.md for setup).
 ## It does not decide what a game is: player count, admin, spectator and vote weight are [Callable]s the host sets, since a server, a mirroring client and a headless test disagree about each.

@@ -1,5 +1,5 @@
 @tool
-extends "res://addons/dot_vote/runtime/dot_vote_director_state.gd"
+extends "res://addons/gs_vote/runtime/gs_vote_director_state.gd"
 
 ## Questions, ballot filling and reporting of [GSVoteDirector], kept apart so each file stays readable.
 

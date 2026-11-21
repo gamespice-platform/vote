@@ -33,14 +33,14 @@ static func of(p_manager: Object) -> GSVoteGameSource:
 
 ## Finds the game manager in [GSRegistry], for a host that has one but no reference.
 static func from_registry() -> GSVoteGameSource:
-	return of(GSRegistry.get_service(&"dot_game_manager"))
+	return of(GSRegistry.get_service(&"gs_game_manager"))
 
 
 ## What the RUNNING game's descriptor carries under [param key], or an empty dictionary.
 ## For a module that must read its own game's [code]game.yml[/code] without naming the host's config class; duck-typed through [GSRegistry].
 ## A copy, so a caller that layers it does not write into the descriptor.
 static func running_game_metadata(key: String) -> Dictionary:
-	var manager: Object = GSRegistry.get_service(&"dot_game_manager")
+	var manager: Object = GSRegistry.get_service(&"gs_game_manager")
 
 	if manager == null or not manager.has_method("current"):
 		return {}

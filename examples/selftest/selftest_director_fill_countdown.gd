@@ -452,7 +452,7 @@ func _test_chooser_settings() -> void:
 	_check(not whole.validate().ok, "and so is a lead fraction of the whole limit")
 
 	# The layering a game's map vote uses: code defaults < the running game's metadata
-	# < a file < DOT_VOTE_* < --vote-*. GSConfig.load_layered with one layer in front.
+	# < a file < GS_VOTE_* < --vote-*. GSConfig.load_layered with one layer in front.
 	DirAccess.make_dir_recursive_absolute(DATA)
 	var path := DATA.path_join("map_vote.json")
 	GSPaths.write_json(path, {"max_extends": 1, "method": "instant_runoff"})
@@ -461,9 +461,9 @@ func _test_chooser_settings() -> void:
 	_v_chooser_settings_game.extend_seconds = 300.0
 	_v_chooser_settings_game.max_extends = 5
 
-	OS.set_environment("DOT_VOTE_VOTE_DURATION_SEC", "45")
+	OS.set_environment("GS_VOTE_VOTE_DURATION_SEC", "45")
 	_v_chooser_settings_layered = _v_chooser_settings_game.layer_over_defaults(path, {"extend_seconds": 900, "max_extends": 2})
-	OS.unset_environment("DOT_VOTE_VOTE_DURATION_SEC")
+	OS.unset_environment("GS_VOTE_VOTE_DURATION_SEC")
 
 	_test_chooser_settings_2()
 

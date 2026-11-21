@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="dot-vote"
-config/description="Voting for what plays next — games, maps or modes — as one configurable engine: nominations, rock the vote, per-choice time limits, four counting methods, five tie-breaks, and a source seam that points it at dot-server's games or dot-map's catalogue without naming either."
+config/name="gs-vote"
+config/description="Voting for what plays next — games, maps or modes — as one configurable engine: nominations, rock the vote, per-choice time limits, four counting methods, five tie-breaks, and a source seam that points it at gs-server's games or gs-map's catalogue without naming either."
 run/main_scene="res://examples/vote_selftest.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -23,7 +23,7 @@ window/size/viewport_height=900
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dot_vote/plugin.cfg")
+enabled=PackedStringArray("res://addons/gs_vote/plugin.cfg")
 
 [importer_defaults]
 

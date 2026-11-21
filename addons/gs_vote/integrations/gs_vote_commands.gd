@@ -1,7 +1,7 @@
 class_name GSVoteCommands
 extends RefCounted
 
-## The console and chat commands, on a dot-server, in one call: [code]GSVoteCommands.install(self, director)[/code] from a GSModule's _module_loaded.
+## The console and chat commands, on a gs-server, in one call: [code]GSVoteCommands.install(self, director)[/code] from a GSModule's _module_loaded.
 ## Duck-typed so GameSpice Vote installs without GameSpice Server: the host has [code]add_command[/code] or [code]command[/code], a context has [code]reply[/code] and [code]args[/code].
 ## Every name is configurable ([member names], [member prefix]) because GameSpice Server already ships [code]vote[/code] and players of other servers type different words.
 

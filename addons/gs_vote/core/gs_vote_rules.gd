@@ -1,14 +1,14 @@
 @tool
 class_name GSVoteRules
-extends "res://addons/dot_vote/core/dot_vote_rules_settings.gd"
+extends "res://addons/gs_vote/core/gs_vote_rules_settings.gd"
 
 ## Every policy decision this addon makes, in one place: [GSVoteBallot], [GSVoteClock] and [GSVoteNominations] hold state, these fields say what they do.
-## A [GSConfig], so it layers as everywhere: defaults < vote.json / vote.yml < server vote.yml < DOT_VOTE_* < --vote-*. Enums are written by name in files ([method apply_dictionary] translates).
+## A [GSConfig], so it layers as everywhere: defaults < vote.json / vote.yml < server vote.yml < GS_VOTE_* < --vote-*. Enums are written by name in files ([method apply_dictionary] translates).
 ## The defaults run a public server untouched: thirty minutes, rock the vote at 60% of two or more, six options with four kept for nominations, plurality.
 
 
 func env_prefix() -> String:
-	return "DOT_VOTE_"
+	return "GS_VOTE_"
 
 
 func cli_prefix() -> String:
@@ -173,7 +173,7 @@ func marked_name(display: String, official: bool) -> String:
 	return display + unofficial_marker
 
 
-## Layers a game's own vote configuration onto these rules: code defaults < overlay (game metadata) < file < DOT_VOTE_* < --vote-*.
+## Layers a game's own vote configuration onto these rules: code defaults < overlay (game metadata) < file < GS_VOTE_* < --vote-*.
 ## A result that does not validate is refused as a whole and the defaults are put back, since rules that contradict each other mean a vote that never opens.
 func layer_over_defaults(file_path: String, overlay: Dictionary = {}) -> GSResult:
 	var defaults := to_dictionary()
@@ -197,13 +197,13 @@ func layer_over_defaults(file_path: String, overlay: Dictionary = {}) -> GSResul
 	return loaded
 
 
-## Applies [param file_name] from `cfg/addons/dot_vote/`, then the operator's `cfg/server/addons/dot_vote/`.
+## Applies [param file_name] from `cfg/addons/gs_vote/`, then the operator's `cfg/server/addons/gs_vote/`.
 ## A flat [param legacy_dir]/[param file_name] is still read (one WARN) while no new copy exists.
 func apply_cfg_file(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") -> GSResult:
 	return GSAddonConfig.apply_file(CFG_ADDON, file_name, legacy_dir, apply_dictionary)
 
 
-## [method apply_cfg_file], then `DOT_VOTE_*`, `--vote-*` and validation: [method GSConfig.load_layered] for the yml layout.
+## [method apply_cfg_file], then `GS_VOTE_*`, `--vote-*` and validation: [method GSConfig.load_layered] for the yml layout.
 func load_cfg(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") -> GSResult:
 	unknown_keys = PackedStringArray()
 	var file_res := apply_cfg_file(file_name, legacy_dir)

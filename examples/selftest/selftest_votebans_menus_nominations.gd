@@ -115,8 +115,8 @@ func _test_votebans_2() -> void:
 	_check(_v_votebans_bans.yes_needed() == 1 and not _v_votebans_bans.is_open() and _v_votebans_banned.size() == 1, "a leaver shrinks the electorate and the threshold with it")
 
 	# cvars on a real console.
-	if ResourceLoader.exists("res://addons/dot_server/console/dot_console.gd"):
-		var console: Object = load("res://addons/dot_server/console/dot_console.gd").new()
+	if ResourceLoader.exists("res://addons/gs_server/console/gs_console.gd"):
+		var console: Object = load("res://addons/gs_server/console/gs_console.gd").new()
 		_v_votebans_rig = _ban_rig(6)
 		_v_votebans_bans = _v_votebans_rig[0]
 		var bound := _v_votebans_bans.bind_commands(console)
@@ -129,7 +129,7 @@ func _test_votebans_2() -> void:
 			_check(is_equal_approx(_v_votebans_bans.rules.ban_minutes, 15.0), "and the console's value is the ban's length")
 		console.free()
 	else:
-		_check(false, "dot-server is present so the voteban cvars can be run", "addons/dot_server is not linked")
+		_check(false, "gs-server is present so the voteban cvars can be run", "addons/gs_server is not linked")
 
 	_done()
 
@@ -139,8 +139,8 @@ func _test_votebans_2() -> void:
 func _test_map_menu() -> void:
 	_section("The map menu: the owner's flag changes, anybody else votes")
 
-	if not ResourceLoader.exists("res://addons/dot_server/console/dot_console.gd"):
-		_check(false, "dot-server is present so the map menu can be run", "addons/dot_server is not linked")
+	if not ResourceLoader.exists("res://addons/gs_server/console/gs_console.gd"):
+		_check(false, "gs-server is present so the map menu can be run", "addons/gs_server is not linked")
 		_done()
 		return
 
@@ -159,7 +159,7 @@ func _test_map_menu() -> void:
 	_v_map_menu_announced = []
 	_v_map_menu_director.announce_fn = func(line: String) -> void: _v_map_menu_announced.append(line)
 
-	_v_map_menu_console = (load("res://addons/dot_server/console/dot_console.gd") as GDScript).new()
+	_v_map_menu_console = (load("res://addons/gs_server/console/gs_console.gd") as GDScript).new()
 	add_child(_v_map_menu_console)
 	_v_map_menu_commands = GSVoteCommands.install(_v_map_menu_console, _v_map_menu_director)
 	_v_map_menu_sent = []
@@ -171,7 +171,7 @@ func _test_map_menu() -> void:
 	_check(_v_map_menu_commands.map_menu.cvar != null and _v_map_menu_commands.map_menu.required_flag() == "generic",
 		"with sv_map_menu_flag, staff (generic) by default")
 
-	var ctx_script: GDScript = load("res://addons/dot_server/console/dot_cmd_context.gd")
+	var ctx_script: GDScript = load("res://addons/gs_server/console/gs_cmd_context.gd")
 	_v_map_menu_replies = PackedStringArray()
 	_v_map_menu_player = ctx_script.new()
 	_v_map_menu_player.set("source", 3)
@@ -415,7 +415,7 @@ func _map_menu_late_flag() -> void:
 	# `+sv_map_menu_flag anyone` on a server's command line runs before any module registers
 	# the cvar; the menu applies it when it does (play.sh's local server relies on it).
 	var argv := _ArgvConsole.new()
-	var flag_cvar: Object = (load("res://addons/dot_server/console/dot_convar.gd") as GDScript).new(GSVoteMapMenu.FLAG_CVAR, "generic")
+	var flag_cvar: Object = (load("res://addons/gs_server/console/gs_convar.gd") as GDScript).new(GSVoteMapMenu.FLAG_CVAR, "generic")
 	GSVoteMapMenu._from_command_line(argv, flag_cvar, GSVoteMapMenu.FLAG_CVAR)
 	_check(str(flag_cvar.call("get_string")) == "anyone", "a value given on the command line reaches the cvar when it is registered late")
 
@@ -592,7 +592,7 @@ func _test_rules_layering_2() -> void:
 		"and one unreadable mark costs one warning rather than the whole list"
 	)
 
-	_check(_v_rules_layering_rules.env_prefix() == "DOT_VOTE_", "the environment prefix is declared")
+	_check(_v_rules_layering_rules.env_prefix() == "GS_VOTE_", "the environment prefix is declared")
 	_check(_v_rules_layering_rules.cli_prefix() == "--vote-", "and so is the command-line one")
 
 	_done()

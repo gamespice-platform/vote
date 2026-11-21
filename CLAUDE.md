@@ -18,16 +18,16 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 | Path | What |
 | --- | --- |
-| `addons/dot_vote/core/` | `GSVoteChoice` (an id, a name, a ballot's facts), `GSVoteResult`, `GSVoteRules` (every policy, a `GSConfig`) |
-| `addons/dot_vote/runtime/` | `GSVoteDirector` (the engine), `GSVoteBallot`, `GSVoteClock`, `GSVoteNominations`, `GSVoteHistory`, `GSVoteSource` / `GSVoteListSource`, and the client views `GSVoteClockView`, `GSVoteBallotView`, `GSVoteBallotFeed` |
-| `addons/dot_vote/integrations/` | `GSVoteCommands`, `GSVoteMapMenu` (the M menu's server half, installed with the commands), `GSVoteMapSource` (GameSpice Map), `GSVoteGameSource` (GameSpice Server's `GSGameManager`), `GSVoteRoundGame` (a round-based game's next-map vote, extended by the game), `GSVoteTimedGame` (the vote of a game on a clock, extended by the game) |
-| `addons/dot_vote/runtime/dot_vote_bans.gd`, `dot_vote_ban_rules.gd` | `GSVoteBans` (a yes/no vote to ban one player; `start`, `vote`, `ban_fn`) and its `sv_voteban*` cvars. [design](docs/design.md#votebans) |
+| `addons/gs_vote/core/` | `GSVoteChoice` (an id, a name, a ballot's facts), `GSVoteResult`, `GSVoteRules` (every policy, a `GSConfig`) |
+| `addons/gs_vote/runtime/` | `GSVoteDirector` (the engine), `GSVoteBallot`, `GSVoteClock`, `GSVoteNominations`, `GSVoteHistory`, `GSVoteSource` / `GSVoteListSource`, and the client views `GSVoteClockView`, `GSVoteBallotView`, `GSVoteBallotFeed` |
+| `addons/gs_vote/integrations/` | `GSVoteCommands`, `GSVoteMapMenu` (the M menu's server half, installed with the commands), `GSVoteMapSource` (GameSpice Map), `GSVoteGameSource` (GameSpice Server's `GSGameManager`), `GSVoteRoundGame` (a round-based game's next-map vote, extended by the game), `GSVoteTimedGame` (the vote of a game on a clock, extended by the game) |
+| `addons/gs_vote/runtime/gs_vote_bans.gd`, `gs_vote_ban_rules.gd` | `GSVoteBans` (a yes/no vote to ban one player; `start`, `vote`, `ban_fn`) and its `sv_voteban*` cvars. [design](docs/design.md#votebans) |
 | `examples/vote_selftest.tscn` | the suite; `examples/fixtures/` its data |
 
 ## Running and testing
 
 - The family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything)), then `godot --headless --path . res://examples/vote_selftest.tscn` (non-zero on failure).
-- `addons/dot_map` and `addons/dot_server` must be linked; without them the two integration sections fail loudly, on purpose. [design](docs/design.md#the-suite)
+- `addons/gs_map` and `addons/gs_server` must be linked; without them the two integration sections fail loudly, on purpose. [design](docs/design.md#the-suite)
 - A new check is not done until it has been armed: break the code it guards and watch it fire. [design](docs/design.md#four-rules-from-the-parity-work)
 
 ## Rules that bite
@@ -43,7 +43,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 - `option_ids()` is display order and what a typed number indexes; `countable_ids()` (choices first) is what ties are broken in. [design](docs/design.md#four-rules-from-the-parity-work)
 - `round_based` is set only by a host that reports every round end; only a time or score limit waits for the round. [design](docs/design.md#three-clocks-and-only-one-of-them-is-a-rounds)
 - `trigger: manual` hands the host only the SCHEDULED ballot; a passed rock-the-vote opens its own under every trigger, and a host's leftover `clock.expired` handler finds it open (vote_due fires before expired). [design](docs/design.md#manual-is-the-schedule-not-rock-the-vote)
-- API level is `addons/dot_vote/dot_vote_api.gd`; bump LEVEL for anything a game can call.
+- API level is `addons/gs_vote/gs_vote_api.gd`; bump LEVEL for anything a game can call.
 - `trigger: round_end` must behave differently from `time_limit` (a held ballot, `is_waiting_for_round_end()`); `rtv_only` and `end_vote: false` never open a ballot at the lead. [history](docs/history.md#the-parity-work)
 - Hibernation pauses everything and wakes with `restart()`, which writes no second history entry. An empty server that does not sleep moves on by `empty_choice`, drawn from `empty_rng`, never `fill_seed`. [design](docs/design.md#an-empty-server-the-clock-sleeps-or-the-server-moves-on-by-itself)
 - `on_no_votes` is a ballot nobody voted in; `empty_choice` is a server nobody is on. Different keys. [design](docs/design.md#an-empty-server-the-clock-sleeps-or-the-server-moves-on-by-itself)
@@ -56,7 +56,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 | To change | Where |
 | --- | --- |
-| Any policy at all | `GSVoteRules`, layered like every `GSConfig` (`defaults < file < DOT_VOTE_* < --vote-*`) |
+| Any policy at all | `GSVoteRules`, layered like every `GSConfig` (`defaults < file < GS_VOTE_* < --vote-*`) |
 | A round-based game's whole next-map vote (director, source, feed, `!vote`, when the ballot opens) | extend `GSVoteRoundGame` (API 15; hooks `_apply`, `_ballot_may_open`, `_map_noted`, `_ticked` at 16): set `channel`, `metadata_key`, `command_names`, `config_path` in `_init`, override `_default_kinds()` and, for its own defaults, `_rules()`. `examples/round_game_selftest.tscn` |
 | The vote of a game on a clock, not rounds (director, source, feed, `!vote`, the signal and clock relay a host sends clients) | extend `GSVoteTimedGame` (API 17): set `channel`, `metadata_key`, `command_names`, `noun`, `config_path` in `_init`, override `_rules()` (a TIME_LIMIT), `_make_source()` for choices that are not a list, `_configure_director()`, `_voters()`, `_in_our_words()`, `_describe_extra()`. `examples/timed_game_selftest.tscn` |
 | A game's own defaults, under an operator's file | `GSVoteRules.layer_over_defaults(file, GSVoteGameSource.running_game_metadata("map_vote"))` |
@@ -70,7 +70,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 | What they hear | `GSVoteDirector.cue` (a signal carrying a `cue_*` id) |
 | A countdown on a HUD | `GSVoteDirector.countdown_started` / `countdown_tick` |
 | The time left on a client's HUD | `GSVoteClockView`: `state_of(director)` on the server, sent when `is_stale`; `adopt` and `formatted_at` on the client |
-| The ballot drawn on a client's screen | `GSVoteBallotView.state_of(director, people_fn)` and `GSVoteBallotFeed`; dot-ui's `GSBallotPanel` draws it |
+| The ballot drawn on a client's screen | `GSVoteBallotView.state_of(director, people_fn)` and `GSVoteBallotFeed`; gs-ui's `GSBallotPanel` draws it |
 | Whether a time limit waits for the round in progress | `GSVoteRules.time_up` / `finish_round_max_sec`, `GSVoteDirector.round_based`, and `round_in_progress_fn` (warmup holds nothing) |
 | Whether another vote is on screen | `GSVoteDirector.busy_fn` |
 | The leading score, for a score limit | `GSVoteDirector.note_score` |
