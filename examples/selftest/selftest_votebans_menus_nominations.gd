@@ -3,25 +3,25 @@ extends "res://examples/selftest/selftest_admin_and_catalogue.gd"
 ## Selftest sections: votebans, map menus, choices, rules layering and nominations.
 
 var _v_votebans_rig: Array
-var _v_votebans_bans: DotVoteBans
+var _v_votebans_bans: GSVoteBans
 var _v_votebans_banned: Array
-var _v_votebans_res: DotResult
+var _v_votebans_res: GSResult
 var _v_map_menu_applied: Array
-var _v_map_menu_source: DotVoteListSource
-var _v_map_menu_rules: DotVoteRules
-var _v_map_menu_director: DotVoteDirector
+var _v_map_menu_source: GSVoteListSource
+var _v_map_menu_rules: GSVoteRules
+var _v_map_menu_director: GSVoteDirector
 var _v_map_menu_announced: Array
 var _v_map_menu_console: Node
-var _v_map_menu_commands: DotVoteCommands
+var _v_map_menu_commands: GSVoteCommands
 var _v_map_menu_sent: Array
 var _v_map_menu_replies: PackedStringArray
 var _v_map_menu_player: Object
 var _v_map_menu_moderator: Object
 var _v_map_menu_now_ids: Array
-var _v_choices_limits: DotVoteChoice
-var _v_rules_layering_rules: DotVoteRules
-var _v_nominations_rules: DotVoteRules
-var _v_nominations_noms: DotVoteNominations
+var _v_choices_limits: GSVoteChoice
+var _v_rules_layering_rules: GSVoteRules
+var _v_nominations_rules: GSVoteRules
+var _v_nominations_noms: GSVoteNominations
 
 
 func _test_votebans() -> void:
@@ -96,7 +96,7 @@ func _test_votebans_2() -> void:
 	_v_votebans_rig = _ban_rig(6)
 	_v_votebans_bans = _v_votebans_rig[0]
 	_v_votebans_banned = _v_votebans_rig[1]
-	_v_votebans_res = _v_votebans_bans.start(DotVoteBans.GAME, &"p2", "team damage")
+	_v_votebans_res = _v_votebans_bans.start(GSVoteBans.GAME, &"p2", "team damage")
 	_check(_v_votebans_res.ok and _v_votebans_bans.is_open(), "the game starts one with a reason")
 	_v_votebans_bans.vote(&"p1", true)
 	_v_votebans_bans.vote(&"p3", true)
@@ -145,10 +145,10 @@ func _test_map_menu() -> void:
 		return
 
 	_v_map_menu_applied = []
-	_v_map_menu_source = DotVoteListSource.of(_choices(["atrium", "yard", "docks", "foundry"]))
-	_v_map_menu_source.apply_fn = func(id: StringName) -> DotResult:
+	_v_map_menu_source = GSVoteListSource.of(_choices(["atrium", "yard", "docks", "foundry"]))
+	_v_map_menu_source.apply_fn = func(id: StringName) -> GSResult:
 		_v_map_menu_applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	_v_map_menu_source.entries[2].group = &"capture"
 	_v_map_menu_source.entries[3].meta = {"thumbnail": "res://maps/foundry.png"}
 	_v_map_menu_rules = _rules()
@@ -161,7 +161,7 @@ func _test_map_menu() -> void:
 
 	_v_map_menu_console = (load("res://addons/dot_server/console/dot_console.gd") as GDScript).new()
 	add_child(_v_map_menu_console)
-	_v_map_menu_commands = DotVoteCommands.install(_v_map_menu_console, _v_map_menu_director)
+	_v_map_menu_commands = GSVoteCommands.install(_v_map_menu_console, _v_map_menu_director)
 	_v_map_menu_sent = []
 	_v_map_menu_commands.map_menu.notice_fn = func(_ctx: Object, data: Dictionary) -> bool:
 		_v_map_menu_sent.append(data)
@@ -205,17 +205,17 @@ func _test_map_menu_2() -> void:
 
 	_v_map_menu_director.begin(&"yard")
 	_v_map_menu_now_ids = []
-	_v_map_menu_commands.map_menu.change_fn = func(id: StringName) -> DotResult:
+	_v_map_menu_commands.map_menu.change_fn = func(id: StringName) -> GSResult:
 		_v_map_menu_now_ids.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	_v_map_menu_console.call("execute", "mapmenu docks", _v_map_menu_moderator)
 	await get_tree().process_frame
 	_check(_v_map_menu_now_ids == [&"docks"] and _v_map_menu_applied.size() == 1, "a game's change_fn (change now, not next round) is used when it gives one")
 
 	var moded: Array = []
-	_v_map_menu_commands.map_menu.mode_fn = func(id: StringName, mode: StringName) -> DotResult:
+	_v_map_menu_commands.map_menu.mode_fn = func(id: StringName, mode: StringName) -> GSResult:
 		moded.append([id, mode])
-		return DotResult.success(mode)
+		return GSResult.success(mode)
 	_v_map_menu_console.call("execute", "mapmenu docks tdm", _v_map_menu_moderator)
 	await get_tree().process_frame
 	_check(moded == [[&"docks", &"tdm"]], "`mapmenu <id> <mode>` carries the mode to mode_fn (%s)" % str(moded))
@@ -270,7 +270,7 @@ func _test_map_menu_3() -> void:
 	_check(_v_map_menu_commands.map_menu.required_flag() == "anyone" and bool((_v_map_menu_sent.back() as Dictionary).get("allowed", false)),
 		"'anyone' lets anybody change it")
 	_v_map_menu_console.call("execute", "sv_map_menu_flag generic", null)
-	var unbound := DotVoteMapMenu.new()
+	var unbound := GSVoteMapMenu.new()
 	unbound.flag = ""
 	_check(unbound.required_flag() == "generic" and not unbound.is_staff(_v_map_menu_player),
 		"a menu with no cvar registered and no flag set is staff only too")
@@ -282,7 +282,7 @@ func _test_map_menu_3() -> void:
 	var many: Array = []
 	for i in 400:
 		many.append({"id": "surf_long_map_name_%03d" % i, "name": "Surf: A Long Map Name %d" % i, "mode": "Surf", "detail": "tier %d" % (i % 6), "current": false})
-	var parts := DotVoteMapMenu.chunks_of(many)
+	var parts := GSVoteMapMenu.chunks_of(many)
 	var counted := 0
 	var biggest := 0
 	for part: Array in parts:
@@ -298,10 +298,10 @@ func _test_map_menu_3() -> void:
 
 ## Who is a human, and how many: the lone player, two of them, the owner's minimum, a majority,
 ## and the host. A guest's M choice once changed a public server's map.
-func _test_map_menu_humans(console: Node, commands: DotVoteCommands, director: DotVoteDirector,
-		rules: DotVoteRules, sent: Array, now_ids: Array, player: Object, moderator: Object) -> void:
+func _test_map_menu_humans(console: Node, commands: GSVoteCommands, director: GSVoteDirector,
+		rules: GSVoteRules, sent: Array, now_ids: Array, player: Object, moderator: Object) -> void:
 	var menu := commands.map_menu
-	var guest_session := DotClientSession.new(5, 7)
+	var guest_session := GSClientSession.new(5, 7)
 	player.set("session", guest_session)
 	var here := [1]
 	menu.humans_fn = func() -> int: return here[0]
@@ -355,8 +355,8 @@ func _test_map_menu_humans(console: Node, commands: DotVoteCommands, director: D
 
 
 func _map_menu_humans_more(
-	console: Node, director: DotVoteDirector, rules: DotVoteRules, now_ids: Array,
-	player: Object, moderator: Object, menu: Object, guest_session: DotClientSession,
+	console: Node, director: GSVoteDirector, rules: GSVoteRules, now_ids: Array,
+	player: Object, moderator: Object, menu: Object, guest_session: GSClientSession,
 	here: Array, last: Callable
 ) -> void:
 	var before := 0
@@ -415,15 +415,15 @@ func _map_menu_late_flag() -> void:
 	# `+sv_map_menu_flag anyone` on a server's command line runs before any module registers
 	# the cvar; the menu applies it when it does (play.sh's local server relies on it).
 	var argv := _ArgvConsole.new()
-	var flag_cvar: Object = (load("res://addons/dot_server/console/dot_convar.gd") as GDScript).new(DotVoteMapMenu.FLAG_CVAR, "generic")
-	DotVoteMapMenu._from_command_line(argv, flag_cvar, DotVoteMapMenu.FLAG_CVAR)
+	var flag_cvar: Object = (load("res://addons/dot_server/console/dot_convar.gd") as GDScript).new(GSVoteMapMenu.FLAG_CVAR, "generic")
+	GSVoteMapMenu._from_command_line(argv, flag_cvar, GSVoteMapMenu.FLAG_CVAR)
 	_check(str(flag_cvar.call("get_string")) == "anyone", "a value given on the command line reaches the cvar when it is registered late")
 
 
 func _test_choices() -> void:
 	_section("A choice knows what it needs, and hands out copies of its metadata")
 
-	var choice := DotVoteChoice.of(&"fc", "FC")
+	var choice := GSVoteChoice.of(&"fc", "FC")
 	choice.min_players = 4
 	choice.max_players = 16
 
@@ -443,7 +443,7 @@ func _test_choices() -> void:
 	choice.enabled = false
 	_check(not choice.available_for(8, true), "and disabled means disabled")
 
-	_v_choices_limits = DotVoteChoice.of(&"epic")
+	_v_choices_limits = GSVoteChoice.of(&"epic")
 	_check(
 		is_equal_approx(_v_choices_limits.duration_for(1800.0), 1800.0),
 		"a choice with no limit of its own takes the server's"
@@ -470,14 +470,14 @@ func _test_choices_2() -> void:
 	_v_choices_limits.round_limit = 5
 	_check(_v_choices_limits.rounds_for(0) == 5, "the same for rounds")
 	_check(
-		DotVoteChoice.of(&"x").cooldown_for(5) == 5,
+		GSVoteChoice.of(&"x").cooldown_for(5) == 5,
 		"and for the cooldown"
 	)
 
 	# A Dictionary is a reference in GDScript, so a to_dictionary() that hands out its own member
-	# gives every caller the same object (also found in DotLeaderboardDef, DotTimerZone.payload,
-	# DotTimerRecord and DotMapDef.meta).
-	var source_choice := DotVoteChoice.of(&"m")
+	# gives every caller the same object (also found in GSLeaderboardDef, GSTimerZone.payload,
+	# GSTimerRecord and GSMapDef.meta).
+	var source_choice := GSVoteChoice.of(&"m")
 	source_choice.meta = {"nested": {"tier": 3}}
 
 	var dict := source_choice.to_dictionary()
@@ -490,16 +490,16 @@ func _test_choices_2() -> void:
 		"got %d" % int((source_choice.meta["nested"] as Dictionary)["tier"])
 	)
 
-	var round_tripped := DotVoteChoice.from_dictionary(source_choice.to_dictionary())
+	var round_tripped := GSVoteChoice.from_dictionary(source_choice.to_dictionary())
 	_check(round_tripped.id == &"m", "and a choice survives a round trip")
 
-	var full := DotVoteChoice.of(&"n", "N")
+	var full := GSVoteChoice.of(&"n", "N")
 	full.time_limit_sec = 90.0
 	full.nominate_only = true
 	full.weight = 2.5
 	full.cooldown_override = 2
 
-	var back := DotVoteChoice.from_dictionary(full.to_dictionary())
+	var back := GSVoteChoice.from_dictionary(full.to_dictionary())
 	_check(
 		is_equal_approx(back.time_limit_sec, 90.0) and back.nominate_only
 			and is_equal_approx(back.weight, 2.5) and back.cooldown_override == 2,
@@ -512,7 +512,7 @@ func _test_choices_2() -> void:
 func _test_rules_layering() -> void:
 	_section("Every rule is settable from a file, the environment or the command line")
 
-	_v_rules_layering_rules = DotVoteRules.new()
+	_v_rules_layering_rules = GSVoteRules.new()
 
 	_check(
 		_v_rules_layering_rules.config_keys().size() >= 40,
@@ -536,11 +536,11 @@ func _test_rules_layering() -> void:
 	# of integers is a file nobody can read or diff.
 	_v_rules_layering_rules.apply_dictionary({"method": "instant_runoff", "fill": "WEIGHTED"}, "file")
 	_check(
-		_v_rules_layering_rules.method == DotVoteRules.Method.INSTANT_RUNOFF,
+		_v_rules_layering_rules.method == GSVoteRules.Method.INSTANT_RUNOFF,
 		"an enum can be written by name (method: instant_runoff)"
 	)
 	_check(
-		_v_rules_layering_rules.fill == DotVoteRules.Fill.WEIGHTED,
+		_v_rules_layering_rules.fill == GSVoteRules.Fill.WEIGHTED,
 		"in any case, and with dashes or spaces"
 	)
 	_check(
@@ -555,7 +555,7 @@ func _test_rules_layering() -> void:
 func _test_rules_layering_2() -> void:
 	_v_rules_layering_rules.apply_dictionary({"tie_break": "2"}, "file")
 	_check(
-		_v_rules_layering_rules.tie_break == DotVoteRules.TieBreak.LEAST_RECENTLY_PLAYED,
+		_v_rules_layering_rules.tie_break == GSVoteRules.TieBreak.LEAST_RECENTLY_PLAYED,
 		"a numeric enum still works, for a config written by a program"
 	)
 
@@ -568,11 +568,11 @@ func _test_rules_layering_2() -> void:
 	)
 
 	_check(
-		DotVoteRules.enum_names_for("apply").has("end_of_round"),
+		GSVoteRules.enum_names_for("apply").has("end_of_round"),
 		"the legal names are reportable, for a settings screen"
 	)
 	_check(
-		DotVoteRules.enum_names_for("duration_sec").is_empty(),
+		GSVoteRules.enum_names_for("duration_sec").is_empty(),
 		"and nothing is reported for a setting that is not an enum"
 	)
 
@@ -605,7 +605,7 @@ func _test_nominations() -> void:
 	_v_nominations_rules.nominations_per_player = 1
 	_v_nominations_rules.nominations_max = 3
 
-	_v_nominations_noms = DotVoteNominations.of(_v_nominations_rules)
+	_v_nominations_noms = GSVoteNominations.of(_v_nominations_rules)
 
 	_check(_v_nominations_noms.add(&"alice", &"a").ok, "a player nominates")
 	_check(
@@ -621,7 +621,7 @@ func _test_nominations() -> void:
 
 	var strict := _rules()
 	strict.nomination_seconding = false
-	var no_seconds := DotVoteNominations.of(strict)
+	var no_seconds := GSVoteNominations.of(strict)
 	no_seconds.add(&"alice", &"a")
 	_check(
 		not no_seconds.add(&"bob", &"a").ok,
@@ -670,7 +670,7 @@ func _test_nominations_2() -> void:
 	_check(
 		ordered[0] == &"b" and ordered[1] == &"c" and ordered[2] == &"d",
 		"nomination order is preserved, which is what fills the reserved places",
-		", ".join(DotVoteBallot._as_strings(ordered))
+		", ".join(GSVoteBallot._as_strings(ordered))
 	)
 	_check(_v_nominations_noms.first_index(&"c") == 1, "and is reportable as a tie-break key")
 	_check(
@@ -686,7 +686,7 @@ func _test_nominations_2() -> void:
 	var off := _rules()
 	off.nominations_enabled = false
 	_check(
-		not DotVoteNominations.of(off).add(&"alice", &"a").ok,
+		not GSVoteNominations.of(off).add(&"alice", &"a").ok,
 		"and nominations can be turned off entirely"
 	)
 
@@ -694,7 +694,7 @@ func _test_nominations_2() -> void:
 	many.nominations_per_player = 2
 	many.nominations_max = 0
 
-	var multi := DotVoteNominations.of(many)
+	var multi := GSVoteNominations.of(many)
 	_check(multi.add(&"alice", &"a").ok and multi.add(&"alice", &"b").ok,
 		"a server can allow more than one each")
 	_check(

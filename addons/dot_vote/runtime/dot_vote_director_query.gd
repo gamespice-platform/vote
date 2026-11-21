@@ -1,7 +1,7 @@
 @tool
 extends "res://addons/dot_vote/runtime/dot_vote_director_state.gd"
 
-## Questions, ballot filling and reporting of [DotVoteDirector], kept apart so each file stays readable.
+## Questions, ballot filling and reporting of [GSVoteDirector], kept apart so each file stays readable.
 
 ## Tells the director what is running now, and starts its clock.
 ## Call it at boot and after every change, including one this director did not cause (a hand-typed `changelevel`
@@ -16,7 +16,7 @@ func begin(id: StringName) -> void:
 	if id != &"":
 		history.note_played(id)
 
-	DotLog.info(CHANNEL, "now running", {
+	GSLog.info(CHANNEL, "now running", {
 		"id": String(id),
 		"limit": clock.formatted_remaining(),
 		"rounds": clock.round_limit,
@@ -25,12 +25,12 @@ func begin(id: StringName) -> void:
 
 ## Starts what is running again from its configured start, without changing it.
 ## Everything [method begin] resets, without the second history entry calling it again would write (that would shorten
-## every cooldown by one play). What waking from hibernation does ([member DotVoteRules.wake_restart]); an admin may call it too.
+## every cooldown by one play). What waking from hibernation does ([member GSVoteRules.wake_restart]); an admin may call it too.
 func restart() -> void:
 	_reset_to_start()
 	_cooldown_remaining = 0.0
 
-	DotLog.info(CHANNEL, "started again", {
+	GSLog.info(CHANNEL, "started again", {
 		"id": String(_current_id), "limit": clock.formatted_remaining(),
 	})
 
@@ -107,12 +107,12 @@ func _cue(id: String) -> void:
 
 ## Forgets everything one player did. Call when they disconnect.
 ## Their rock-the-vote goes (a leaver's would end the map on votes of people who left) and their nominations stay
-## (a server request); [member DotVoteRules.nominations_forget_leavers] reverses the second half.
+## (a server request); [member GSVoteRules.nominations_forget_leavers] reverses the second half.
 func forget_voter(voter: StringName) -> void:
 	clock.unrock(voter)
 
 	if rules.nominations_forget_leavers:
-		nominations.remove_voter(voter, DotVoteNominations.REASON_LEFT)
+		nominations.remove_voter(voter, GSVoteNominations.REASON_LEFT)
 
 	if ballot.open and ballot.withdraw(voter):
 		# Recomputed rather than decremented, so it stays right when several leave at
@@ -121,10 +121,10 @@ func forget_voter(voter: StringName) -> void:
 
 
 ## Whether an automatic ballot (any reason but manual) would have one voter to decide it.
-## Nobody at all is not "one": [member DotVoteRules.min_players_to_vote] 0 asked for that.
+## Nobody at all is not "one": [member GSVoteRules.min_players_to_vote] 0 asked for that.
 func _lone_auto(reason: StringName) -> bool:
 	return (
-		reason != DotVoteClock.REASON_MANUAL and not rules.allow_single_voter_auto
+		reason != GSVoteClock.REASON_MANUAL and not rules.allow_single_voter_auto
 		and player_count() > 0 and _eligible_count() < 2
 	)
 
@@ -140,29 +140,29 @@ func pending_id() -> StringName:
 	return _pending_id
 
 
-## Asks the source to re-read a list it is fed rather than holds ([member DotVoteListSource.entries_fn]):
+## Asks the source to re-read a list it is fed rather than holds ([member GSVoteListSource.entries_fn]):
 ## when a choice begins and whenever a ballot is about to be filled. Duck-typed, so a source that is not a
-## [DotVoteSource] is left alone.
+## [GSVoteSource] is left alone.
 func _refresh_source() -> void:
 	if source != null and source.has_method("before_ballot"):
 		source.call("before_ballot")
 
 
 ## Re-reads the source, for a list an operator edited on disk.
-func reload() -> DotResult:
+func reload() -> GSResult:
 	if source == null:
-		return DotResult.fail(DotError.CODE_STATE, "No source.")
+		return GSResult.fail(GSError.CODE_STATE, "No source.")
 
 	var reloaded := source.reload()
 
 	if reloaded.ok:
-		DotLog.info(CHANNEL, "choices reloaded", {"count": source.choices().size()})
+		GSLog.info(CHANNEL, "choices reloaded", {"count": source.choices().size()})
 
 	return reloaded
 
 
 ## What the source would play next, ignoring the vote: down its order from what is running,
-## skipping anything on cooldown or unavailable. What [constant DotVoteRules.NoQuorum.ROTATION] uses,
+## skipping anything on cooldown or unavailable. What [constant GSVoteRules.NoQuorum.ROTATION] uses,
 ## and what a `nextmap` command reports.
 func _next_in_rotation() -> StringName:
 	if source == null:
@@ -212,8 +212,8 @@ func next_in_rotation() -> StringName:
 
 ## The options a ballot opened right now would carry.
 ## Public because a HUD wants to show them before the vote and it is the piece worth testing on its own.
-func build_options(players: int) -> Array[DotVoteChoice]:
-	var out: Array[DotVoteChoice] = []
+func build_options(players: int) -> Array[GSVoteChoice]:
+	var out: Array[GSVoteChoice] = []
 	var taken := {}
 
 	if source == null:
@@ -257,7 +257,7 @@ func build_options(players: int) -> Array[DotVoteChoice]:
 		pool = _eligible_pool(players, taken, true)
 
 		if not pool.is_empty():
-			DotLog.warn(CHANNEL, "everything is on cooldown; ignoring it for this vote", {
+			GSLog.warn(CHANNEL, "everything is on cooldown; ignoring it for this vote", {
 				"pool": pool.size()
 			})
 
@@ -275,8 +275,8 @@ func _eligible_pool(
 	players: int,
 	taken: Dictionary,
 	ignore_cooldown: bool = false
-) -> Array[DotVoteChoice]:
-	var out: Array[DotVoteChoice] = []
+) -> Array[GSVoteChoice]:
+	var out: Array[GSVoteChoice] = []
 	var all := source.choices()
 	var current_name := _shown_name(source.find(_current_id))
 
@@ -304,7 +304,7 @@ func _eligible_pool(
 
 
 ## What a choice is called on a ballot, folded for comparison, or "" for none.
-func _shown_name(choice: DotVoteChoice) -> String:
+func _shown_name(choice: GSVoteChoice) -> String:
 	return choice.name_or_id().strip_edges().to_lower() if choice != null else ""
 
 
@@ -323,16 +323,16 @@ func has_alternatives(players: int = -1) -> bool:
 	return not _eligible_pool(count, {}, true).is_empty()
 
 
-func _order_pool(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
+func _order_pool(pool: Array[GSVoteChoice]) -> Array[GSVoteChoice]:
 	var out := pool.duplicate()
 
 	match rules.fill:
-		DotVoteRules.Fill.SEQUENTIAL:
+		GSVoteRules.Fill.SEQUENTIAL:
 			if out.is_empty():
 				return out
 
 			var start := _fill_cursor % out.size()
-			var rotated: Array[DotVoteChoice] = []
+			var rotated: Array[GSVoteChoice] = []
 
 			for i in range(out.size()):
 				rotated.append(out[(start + i) % out.size()])
@@ -341,8 +341,8 @@ func _order_pool(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 
 			return rotated
 
-		DotVoteRules.Fill.LEAST_RECENTLY_PLAYED:
-			out.sort_custom(func(a: DotVoteChoice, b: DotVoteChoice) -> bool:
+		GSVoteRules.Fill.LEAST_RECENTLY_PLAYED:
+			out.sort_custom(func(a: GSVoteChoice, b: GSVoteChoice) -> bool:
 				var sa := history.plays_since(a.id)
 				var sb := history.plays_since(b.id)
 
@@ -355,16 +355,16 @@ func _order_pool(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 
 			return out
 
-		DotVoteRules.Fill.MOST_NOMINATED:
+		GSVoteRules.Fill.MOST_NOMINATED:
 			var counts := nominations.counts()
 
-			out.sort_custom(func(a: DotVoteChoice, b: DotVoteChoice) -> bool:
+			out.sort_custom(func(a: GSVoteChoice, b: GSVoteChoice) -> bool:
 				return int(counts.get(a.id, 0)) > int(counts.get(b.id, 0))
 			)
 
 			return out
 
-		DotVoteRules.Fill.WEIGHTED:
+		GSVoteRules.Fill.WEIGHTED:
 			return _weighted_shuffle(out)
 
 		_:
@@ -382,13 +382,13 @@ func _rng() -> RandomNumberGenerator:
 	return rng
 
 
-func _shuffle(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
+func _shuffle(pool: Array[GSVoteChoice]) -> Array[GSVoteChoice]:
 	var rng := _rng()
 	var out := pool.duplicate()
 
 	for i in range(out.size() - 1, 0, -1):
 		var j := rng.randi_range(0, i)
-		var swap: DotVoteChoice = out[i]
+		var swap: GSVoteChoice = out[i]
 		out[i] = out[j]
 		out[j] = swap
 
@@ -396,10 +396,10 @@ func _shuffle(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 
 
 ## Draws without replacement, in proportion to weight.
-func _weighted_shuffle(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
+func _weighted_shuffle(pool: Array[GSVoteChoice]) -> Array[GSVoteChoice]:
 	var rng := _rng()
 	var left := pool.duplicate()
-	var out: Array[DotVoteChoice] = []
+	var out: Array[GSVoteChoice] = []
 
 	while not left.is_empty():
 		var total := 0.0
@@ -431,7 +431,7 @@ func _weighted_shuffle(pool: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 
 ## One choice drawn at random from what a ballot opened now would offer, or [code]&""[/code] when there is only what is running.
 ## The ballot's pool ([method _eligible_pool]): enabled, off cooldown (dropped when all are), never the running one when
-## anything else exists, even under [member DotVoteRules.include_current]. Availability is judged for the next player to arrive.
+## anything else exists, even under [member GSVoteRules.include_current]. Availability is judged for the next player to arrive.
 func empty_draw() -> StringName:
 	if source == null:
 		return &""
@@ -442,7 +442,7 @@ func empty_draw() -> StringName:
 	if pool.is_empty():
 		pool = _eligible_pool(players, {}, true)
 
-	var others: Array[DotVoteChoice] = []
+	var others: Array[GSVoteChoice] = []
 
 	for choice in pool:
 		if choice.id != _current_id:
@@ -463,11 +463,11 @@ func empty_draw() -> StringName:
 # HUD, a menu or another addon can ask rather than duplicate the state.
 
 
-## Whether the clock has run out and the change waits for the round in progress to end ([constant DotVoteRules.TimeUp.FINISH_ROUND]).
-## False once a round ends, once [member DotVoteRules.finish_round_max_sec] has passed, on a host that is not
+## Whether the clock has run out and the change waits for the round in progress to end ([constant GSVoteRules.TimeUp.FINISH_ROUND]).
+## False once a round ends, once [member GSVoteRules.finish_round_max_sec] has passed, on a host that is not
 ## [member round_based], while [member round_in_progress_fn] answers false, and for any limit but time or score.
 func is_finishing_round() -> bool:
-	if rules == null or rules.time_up != DotVoteRules.TimeUp.FINISH_ROUND:
+	if rules == null or rules.time_up != GSVoteRules.TimeUp.FINISH_ROUND:
 		return false
 
 	if not round_based or not clock.is_expired() or _round_ended_since_expiry:
@@ -476,7 +476,7 @@ func is_finishing_round() -> bool:
 	if round_in_progress_fn.is_valid() and not bool(round_in_progress_fn.call()):
 		return false
 
-	if _expired_reason != DotVoteClock.REASON_TIME and _expired_reason != DotVoteClock.REASON_SCORE:
+	if _expired_reason != GSVoteClock.REASON_TIME and _expired_reason != GSVoteClock.REASON_SCORE:
 		return false
 
 	return rules.finish_round_max_sec <= 0.0 or _since_expiry < rules.finish_round_max_sec
@@ -488,8 +488,8 @@ func end_vote_enabled() -> bool:
 		rules != null
 		and rules.enabled
 		and rules.end_vote
-		and rules.trigger != DotVoteRules.Trigger.RTV_ONLY
-		and rules.trigger != DotVoteRules.Trigger.MANUAL
+		and rules.trigger != GSVoteRules.Trigger.RTV_ONLY
+		and rules.trigger != GSVoteRules.Trigger.MANUAL
 	)
 
 
@@ -602,7 +602,7 @@ func is_official(id: StringName) -> bool:
 
 
 ## A choice's name as a ballot shows it, marked when it is unofficial.
-func ballot_name(choice: DotVoteChoice) -> String:
+func ballot_name(choice: GSVoteChoice) -> String:
 	if choice == null:
 		return "-"
 
@@ -612,11 +612,11 @@ func ballot_name(choice: DotVoteChoice) -> String:
 ## The name a player sees for an id, pseudo-options included.
 func option_label(id: StringName) -> String:
 	match id:
-		DotVoteBallot.EXTEND:
+		GSVoteBallot.EXTEND:
 			return "Extend"
-		DotVoteBallot.KEEP:
+		GSVoteBallot.KEEP:
 			return "Don't change"
-		DotVoteBallot.ABSTAIN:
+		GSVoteBallot.ABSTAIN:
 			return "No vote"
 
 	var choice := ballot.find_option(id)
@@ -659,7 +659,7 @@ func describe_lines() -> PackedStringArray:
 	if _pending_id != &"":
 		out.append("pending    %s, at %s" % [
 			String(_pending_id),
-			str(DotVoteRules.Apply.keys()[_pending_moment]).to_lower(),
+			str(GSVoteRules.Apply.keys()[_pending_moment]).to_lower(),
 		])
 
 	out.append("end vote   %s" % ("on" if end_vote_enabled() else "off"))
@@ -683,7 +683,7 @@ func _tally_lines() -> Array:
 	var out := []
 
 	for id: Variant in counts:
-		out.append([String(id), DotVoteBallot._format_votes(float(counts[id]))])
+		out.append([String(id), GSVoteBallot._format_votes(float(counts[id]))])
 
 	return out
 

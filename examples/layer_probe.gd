@@ -1,10 +1,10 @@
 extends SceneTree
 
-## Layers [DotVoteRules] the way a game does and runs one real [DotVoteDirector] on them,
+## Layers [GSVoteRules] the way a game does and runs one real [GSVoteDirector] on them,
 ## then prints what its ballot did as one JSON line.
 ##
 ## [b]A child process, because one of the layers is the command line.[/b]
-## [method DotConfig.apply_cli] reads the process's own arguments and nothing in a running
+## [method GSConfig.apply_cli] reads the process's own arguments and nothing in a running
 ## suite can hand it new ones, so `vote_selftest`'s "every layer reaches a running ballot"
 ## starts this once per layer and reads the line back. Every other layer is run the same way
 ## so the four are measured by one path.
@@ -23,7 +23,7 @@ extends SceneTree
 
 
 func _initialize() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -42,22 +42,22 @@ func _run() -> void:
 			var value: Variant = JSON.parse_string(pair[1])
 			overlay[pair[0]] = value if value != null else pair[1]
 
-	var rules := DotVoteRules.new()
+	var rules := GSVoteRules.new()
 	var layered := rules.layer_over_defaults(file, overlay)
 
 	rules.apply_delay_sec = 0.0
-	rules.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	rules.trigger = GSVoteRules.Trigger.TIME_LIMIT
 	rules.duration_sec = 100.0
 	rules.vote_lead_sec = 20.0
 	rules.cooldown = 0
-	rules.apply = DotVoteRules.Apply.IMMEDIATE
+	rules.apply = GSVoteRules.Apply.IMMEDIATE
 
-	var choices: Array[DotVoteChoice] = []
+	var choices: Array[GSVoteChoice] = []
 	for id in ["a", "b", "c"]:
-		choices.append(DotVoteChoice.of(StringName(id), id.capitalize()))
+		choices.append(GSVoteChoice.of(StringName(id), id.capitalize()))
 
-	var source := DotVoteListSource.of(choices)
-	var director := DotVoteDirector.new()
+	var source := GSVoteListSource.of(choices)
+	var director := GSVoteDirector.new()
 	director.rules = rules
 	director.source = source
 	director.register_service = false
@@ -79,7 +79,7 @@ func _run() -> void:
 	if offered:
 		var before := director.clock.remaining
 		for voter in [&"v1", &"v2", &"v3", &"v4"]:
-			var _cast := director.cast_one(voter, DotVoteBallot.EXTEND)
+			var _cast := director.cast_one(voter, GSVoteBallot.EXTEND)
 		var _result := director.close_vote()
 		extended_by = director.clock.remaining - before
 

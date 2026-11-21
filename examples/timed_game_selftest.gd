@@ -1,23 +1,23 @@
 extends Node
 
-## Proves [DotVoteTimedGame], the vote every game on a clock copied: the ballot opens by GameSpice Vote's own clock, the winner reaches the host,
+## Proves [GSVoteTimedGame], the vote every game on a clock copied: the ballot opens by GameSpice Vote's own clock, the winner reaches the host,
 ## the director's signals and the clock reach the host's relay, and a game's names, rules and hooks shape it.
 ## Run: godot --headless --path . res://examples/timed_game_selftest.tscn
 
 ## A game's shim: names and rules only.
-class _Game extends DotVoteTimedGame:
+class _Game extends GSVoteTimedGame:
 	func _init() -> void:
 		channel = "toy.vote"
 		noun = "mountain"
 		command_names = {"vote": "pick"}
 
-	func _rules() -> DotVoteRules:
-		var rules := DotVoteRules.new()
-		rules.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	func _rules() -> GSVoteRules:
+		var rules := GSVoteRules.new()
+		rules.trigger = GSVoteRules.Trigger.TIME_LIMIT
 		rules.duration_sec = 600.0
 		rules.vote_lead_sec = 60.0
 		rules.vote_duration_sec = 25.0
-		rules.apply = DotVoteRules.Apply.IMMEDIATE
+		rules.apply = GSVoteRules.Apply.IMMEDIATE
 		rules.include_extend = false
 		rules.include_current = true
 		return rules
@@ -32,7 +32,7 @@ class _Hooked extends _Game:
 		drops_unfed = false
 		register_service = false
 
-	func _configure_director(d: DotVoteDirector) -> void:
+	func _configure_director(d: GSVoteDirector) -> void:
 		d.round_based = true
 
 	func _voters() -> Array:
@@ -50,7 +50,7 @@ var _failed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -67,11 +67,11 @@ func _rig(maps: Array) -> Array:
 	var game := _Game.new()
 	var applied: Array = []
 	game.maps_fn = func() -> Array: return maps
-	game.apply_fn = func(id: StringName) -> DotResult:
+	game.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	game.voters_fn = func() -> Array: return [&"a", &"b", &"c"]
-	game.content_index = DotContentIndex.new()
+	game.content_index = GSContentIndex.new()
 	add_child(game)
 	var ready := game.setup()
 	_check(ready.ok, "setup succeeds")
@@ -80,24 +80,24 @@ func _rig(maps: Array) -> Array:
 
 
 func _run() -> void:
-	print("DotVoteTimedGame self-test")
+	print("GSVoteTimedGame self-test")
 	var maps := [["m1", "One"], ["m2", "Two"], ["m3", "Three"]]
 
 	var rig := _rig(maps)
-	var game: DotVoteTimedGame = rig[0]
+	var game: GSVoteTimedGame = rig[0]
 	var applied: Array = rig[1]
 	var opened: Array = []
 	var closed: Array = []
 	var changes: Array = []
 	var clocks: Array = []
 	game.vote_opened.connect(func(options: Array, _seconds: float) -> void: opened.append(options))
-	game.vote_closed.connect(func(result: DotVoteResult) -> void: closed.append(result))
-	game.change_due.connect(func(id: StringName, _choice: DotVoteChoice) -> void: changes.append(id))
+	game.vote_closed.connect(func(result: GSVoteResult) -> void: closed.append(result))
+	game.change_due.connect(func(id: StringName, _choice: GSVoteChoice) -> void: changes.append(id))
 	game.clock_due.connect(func(state: Dictionary) -> void: clocks.append(state))
 	_check(game.feed.title == "Vote for the next mountain" and game.feed.command == "pick", "the game's noun and command name reach the feed")
-	_check(game.source is DotVoteListSource and (game.source as DotVoteListSource).label == "mountains", "the source is a list labelled with the noun, pluralised")
-	_check((game.source as DotVoteListSource).entries.size() == 3 and (game.source as DotVoteListSource).current == &"m1", "the host's maps are the entries and the map in play is current")
-	_check(game.director.rules.trigger == DotVoteRules.Trigger.TIME_LIMIT and not game.director.self_advance and not game.director.begin_on_apply, "the game's rules; the host drives the clock")
+	_check(game.source is GSVoteListSource and (game.source as GSVoteListSource).label == "mountains", "the source is a list labelled with the noun, pluralised")
+	_check((game.source as GSVoteListSource).entries.size() == 3 and (game.source as GSVoteListSource).current == &"m1", "the host's maps are the entries and the map in play is current")
+	_check(game.director.rules.trigger == GSVoteRules.Trigger.TIME_LIMIT and not game.director.self_advance and not game.director.begin_on_apply, "the game's rules; the host drives the clock")
 	_check(not game.director.register_service and game.director.auto_apply, "no service registration, the winner applied by the director")
 
 	game.advance(1.0)
@@ -114,7 +114,7 @@ func _run() -> void:
 	var _c2 := game.director.cast_one(&"b", &"m2")
 	var _c3 := game.director.cast_one(&"c", &"m3")
 	game.advance(30.0)
-	_check(closed.size() == 1 and (closed[0] as DotVoteResult).winner_id == &"m2", "the ballot closes on its own and plurality picks the winner")
+	_check(closed.size() == 1 and (closed[0] as GSVoteResult).winner_id == &"m2", "the ballot closes on its own and plurality picks the winner")
 	game.advance(60.0)
 	_check(applied == [&"m2"] and changes == [&"m2"], "the limit applies the winner once, and change_due relays it: %s %s" % [applied, changes])
 
@@ -133,7 +133,7 @@ func _run() -> void:
 	# Hooks.
 	var hooked := _Hooked.new()
 	hooked.maps_fn = func() -> Array: return maps
-	hooked.content_index = DotContentIndex.new()
+	hooked.content_index = GSContentIndex.new()
 	var lines: Array = []
 	hooked.announce_fn = func(line: String) -> void: lines.append(line)
 	add_child(hooked)
@@ -168,10 +168,10 @@ func _test_unfed_settings() -> void:
 	var fed := _Game.new()
 	fed.config_path = path
 	var rules := fed.configured_rules()
-	_check(rules.trigger != DotVoteRules.Trigger.ROUND_END, "drops_unfed takes a round-end trigger out of an operator's file")
+	_check(rules.trigger != GSVoteRules.Trigger.ROUND_END, "drops_unfed takes a round-end trigger out of an operator's file")
 	var kept := _Hooked.new()
 	kept.config_path = path
-	_check(kept.configured_rules().trigger == DotVoteRules.Trigger.ROUND_END, "a game that reports rounds keeps it")
+	_check(kept.configured_rules().trigger == GSVoteRules.Trigger.ROUND_END, "a game that reports rounds keeps it")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	fed.free()
 	kept.free()

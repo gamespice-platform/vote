@@ -1,4 +1,4 @@
-class_name DotVoteClockView
+class_name GSVoteClockView
 extends RefCounted
 
 ## The time left on a vote's clock, as somebody who is not running it sees it.
@@ -33,14 +33,14 @@ var _at: float = 0.0
 
 ## What a client should show, taken from the director that owns the clock.
 ## [param director] may be null: a server with no vote has no clock to show.
-static func state_of(director: DotVoteDirector) -> Dictionary:
+static func state_of(director: GSVoteDirector) -> Dictionary:
 	if director == null or director.clock == null or director.rules == null:
 		return {"has_clock": false, "seconds_left": 0, "running": false}
 
 	var clock := director.clock
 	var shown := (
 		director.rules.enabled
-		and director.rules.trigger != DotVoteRules.Trigger.MANUAL
+		and director.rules.trigger != GSVoteRules.Trigger.MANUAL
 		and clock.duration > 0.0
 	)
 
@@ -96,7 +96,7 @@ func formatted_at(now: float) -> String:
 
 ## Whether what this view shows at [param now] no longer matches [param director]'s clock.
 ## Covers: never told, a clock that appeared or went, one that stopped or started, or a count more than [constant STALE_TOLERANCE_SEC] out (extend, new map, kept map).
-func is_stale(director: DotVoteDirector, now: float) -> bool:
+func is_stale(director: GSVoteDirector, now: float) -> bool:
 	if not known:
 		return true
 

@@ -1,4 +1,4 @@
-class_name DotVoteClock
+class_name GSVoteClock
 extends RefCounted
 
 ## How long the current choice has left, in simulated seconds and rounds, and the two ways players end it early.
@@ -11,11 +11,11 @@ const CHANNEL := "vote.clock"
 ## Emitted once per choice. What happens next is the host's business: "over" differs in a round game, a timer server and a replay.
 signal expired(reason: StringName)
 
-## Time to open the ballot: [member DotVoteRules.vote_lead_sec] or [member DotVoteRules.vote_lead_rounds] before the end.
+## Time to open the ballot: [member GSVoteRules.vote_lead_sec] or [member GSVoteRules.vote_lead_rounds] before the end.
 ## Separate from [signal expired] so the ballot is not opened when time is already up.
 signal vote_due(reason: StringName)
 
-## Emitted once per mark in [member DotVoteRules.warn_at_sec].
+## Emitted once per mark in [member GSVoteRules.warn_at_sec].
 signal warning(seconds_left: float)
 
 ## Somebody rocked the vote. [param needed] is how many more are wanted.
@@ -23,7 +23,7 @@ signal rocked(voter: StringName, votes: int, needed: int)
 
 signal extended(seconds: float, rounds: int)
 
-## The score limit moved: an extend added [member DotVoteRules.extend_score] to it.
+## The score limit moved: an extend added [member GSVoteRules.extend_score] to it.
 ## A host enforcing its own limit has to hear this, or the match ends on the old number.
 signal score_limit_changed(limit: int)
 
@@ -36,7 +36,7 @@ const REASON_RTV := &"rtv"
 const REASON_MANUAL := &"manual"
 const REASON_SCORE := &"score"
 
-var rules: DotVoteRules = null
+var rules: GSVoteRules = null
 
 ## Seconds left. Counted down by [method advance].
 var remaining: float = 0.0
@@ -44,7 +44,7 @@ var remaining: float = 0.0
 ## Seconds this choice was given, after any per-choice override.
 var duration: float = 0.0
 
-## Seconds since [method start]. What [member DotVoteRules.rtv_delay_sec] is measured
+## Seconds since [method start]. What [member GSVoteRules.rtv_delay_sec] is measured
 ## against.
 var elapsed: float = 0.0
 
@@ -72,19 +72,19 @@ var _expired: bool = false
 var _vote_due: bool = false
 
 ## [member elapsed] before which rocking the vote is refused again, after a
-## rock-the-vote ballot that changed nothing. See [member DotVoteRules.rtv_interval_sec].
+## rock-the-vote ballot that changed nothing. See [member GSVoteRules.rtv_interval_sec].
 var _rtv_blocked_until: float = 0.0
 
 
-static func of(p_rules: DotVoteRules) -> DotVoteClock:
-	var clock := DotVoteClock.new()
+static func of(p_rules: GSVoteRules) -> GSVoteClock:
+	var clock := GSVoteClock.new()
 	clock.rules = p_rules
 	return clock
 
 
 ## Starts the clock for a new choice. Call on every change.
 ## [param choice] may be null (the rules' limits apply); its overrides make time limits a property of the game.
-func start(choice: DotVoteChoice = null) -> void:
+func start(choice: GSVoteChoice = null) -> void:
 	duration = (
 		choice.duration_for(rules.duration_sec) if choice != null else rules.duration_sec
 	)
@@ -125,7 +125,7 @@ func resume() -> void:
 	# A resume that lands inside the lead window asks again on the next tick, which is
 	# right: the end-of-map vote has not happened, and the vote cooldown spaces it from
 	# the one that just closed.
-	DotLog.debug(CHANNEL, "resumed", {"remaining": formatted_remaining()})
+	GSLog.debug(CHANNEL, "resumed", {"remaining": formatted_remaining()})
 
 
 ## Refuses rocking the vote for [param seconds] of elapsed time.
@@ -134,7 +134,7 @@ func block_rtv_for(seconds: float) -> void:
 
 
 ## Seconds before the end at which the ballot is due, after
-## [member DotVoteRules.vote_lead_fraction].
+## [member GSVoteRules.vote_lead_fraction].
 func lead_seconds() -> float:
 	if rules.vote_lead_fraction > 0.0 and duration > 0.0:
 		return duration * rules.vote_lead_fraction
@@ -217,7 +217,7 @@ func _fire_vote_due(reason: StringName) -> void:
 
 	_vote_due = true
 
-	DotLog.info(CHANNEL, "a vote is due", {"reason": String(reason)})
+	GSLog.info(CHANNEL, "a vote is due", {"reason": String(reason)})
 
 	vote_due.emit(reason)
 
@@ -237,7 +237,7 @@ func _fire(reason: StringName) -> void:
 	# common setting — expires with nothing ever having asked the players.
 	_fire_vote_due(reason)
 
-	DotLog.info(CHANNEL, "the limit is up", {"reason": String(reason)})
+	GSLog.info(CHANNEL, "the limit is up", {"reason": String(reason)})
 
 	expired.emit(reason)
 
@@ -302,7 +302,7 @@ func extend(seconds: float = -1.0, rounds: int = -1, score: int = -1) -> bool:
 		# into the extension means it ends again the moment one more person agrees.
 		_rocked.clear()
 
-	DotLog.info(CHANNEL, "extended", {
+	GSLog.info(CHANNEL, "extended", {
 		"seconds": by_time, "rounds": by_rounds, "score": by_score, "used": extends_used
 	})
 
@@ -336,33 +336,33 @@ func rock_the_vote(
 	voter: StringName,
 	player_count: int,
 	is_admin: bool = false
-) -> DotResult:
+) -> GSResult:
 	if not rules.rtv_enabled:
-		return DotResult.fail(
-			DotError.CODE_UNSUPPORTED, "Rocking the vote is turned off on this server."
+		return GSResult.fail(
+			GSError.CODE_UNSUPPORTED, "Rocking the vote is turned off on this server."
 		)
 
 	if _expired:
-		return DotResult.fail(
-			DotError.CODE_STATE, "A vote is already on the way."
+		return GSResult.fail(
+			GSError.CODE_STATE, "A vote is already on the way."
 		)
 
 	if not rtv_ready():
-		return DotResult.fail(
-			DotError.CODE_RATE_LIMITED,
+		return GSResult.fail(
+			GSError.CODE_RATE_LIMITED,
 			"You can rock the vote in %d seconds." % int(ceil(rtv_wait_remaining()))
 		)
 
 	if player_count < rules.rtv_min_players:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"There are not enough players to rock the vote.",
 			"%d here, %d needed" % [player_count, rules.rtv_min_players]
 		)
 
 	if _rocked.has(voter):
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"You have already rocked the vote.",
 			"%d of %d" % [_rocked.size(), rtv_needed(player_count)]
 		)
@@ -377,7 +377,7 @@ func rock_the_vote(
 	if (is_admin and rules.rtv_admin_instant) or votes >= needed:
 		_fire(REASON_RTV)
 
-	return DotResult.success(votes)
+	return GSResult.success(votes)
 
 
 ## Withdraws a rock-the-vote, for a player who leaves or changes their mind.
@@ -445,4 +445,4 @@ func describe() -> Dictionary:
 
 
 func _to_string() -> String:
-	return "DotVoteClock(%s)" % timeleft_line()
+	return "GSVoteClock(%s)" % timeleft_line()

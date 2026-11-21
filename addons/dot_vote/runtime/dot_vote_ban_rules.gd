@@ -1,9 +1,9 @@
-class_name DotVoteBanRules
+class_name GSVoteBanRules
 extends RefCounted
 
 ## Every policy of a voteban, as plain values that an operator's cvars overwrite.
-## Not part of [DotVoteRules]: a voteban shares none of its clocks, and a server without one should not carry its settings. [method bind] registers one cvar per setting; a change applies to the next vote.
-## A role is a word from [member DotVoteBans.role_fn]; `*` in a role list is everybody.
+## Not part of [GSVoteRules]: a voteban shares none of its clocks, and a server without one should not carry its settings. [method bind] registers one cvar per setting; a change applies to the next vote.
+## A role is a word from [member GSVoteBans.role_fn]; `*` in a role list is everybody.
 
 const CVARS := {
 	"enabled": ["sv_voteban", "1", "1: players may vote to ban a player. 0: no voteban, not even one a game starts."],
@@ -29,12 +29,12 @@ var min_voters: int = 3
 var _cvars: Dictionary = {}
 
 
-## Registers every cvar on [param host] (a DotModule or a console, duck-typed) and keeps them.
+## Registers every cvar on [param host] (a GSModule or a console, duck-typed) and keeps them.
 ## One cvar per server: a second bind reads the one already there.
 func bind(host: Object) -> void:
 	for setting: String in CVARS:
 		var spec: Array = CVARS[setting]
-		var made: Object = DotVoteMapMenu._bind_cvar(host, spec[0], str(spec[1]), str(spec[2]))
+		var made: Object = GSVoteMapMenu._bind_cvar(host, spec[0], str(spec[1]), str(spec[2]))
 		if made != null:
 			_cvars[setting] = made
 	refresh()

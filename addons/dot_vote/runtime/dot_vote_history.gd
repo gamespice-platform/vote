@@ -1,4 +1,4 @@
-class_name DotVoteHistory
+class_name GSVoteHistory
 extends RefCounted
 
 ## What has been played, and what may not be offered again yet.
@@ -6,22 +6,22 @@ extends RefCounted
 ## One longer than the pool is shortened, since a rotation that offers nothing stalls with no error.
 
 # No log channel: in-memory state asked many times per ballot fill. The one condition an
-# operator must hear about -- everything on cooldown -- is logged by DotVoteDirector.
+# operator must hear about -- everything on cooldown -- is logged by GSVoteDirector.
 
 ## Most recently played first.
 var played: Array[StringName] = []
 
-## id -> Unix seconds it was last played, for [constant DotVoteRules.Cooldown.MINUTES].
+## id -> Unix seconds it was last played, for [constant GSVoteRules.Cooldown.MINUTES].
 var last_played_at: Dictionary = {}
 
 ## Total plays per id, for a "least played" fill and for a console report.
 var play_counts: Dictionary = {}
 
-var rules: DotVoteRules = null
+var rules: GSVoteRules = null
 
 
-static func of(p_rules: DotVoteRules) -> DotVoteHistory:
-	var history := DotVoteHistory.new()
+static func of(p_rules: GSVoteRules) -> GSVoteHistory:
+	var history := GSVoteHistory.new()
 	history.rules = p_rules
 	return history
 
@@ -61,12 +61,12 @@ func on_cooldown(
 	id: StringName,
 	pool_size: int = 0,
 	now_sec: float = -1.0,
-	choice: DotVoteChoice = null
+	choice: GSVoteChoice = null
 ) -> bool:
 	if rules == null:
 		return false
 
-	if rules.cooldown_mode == DotVoteRules.Cooldown.MINUTES:
+	if rules.cooldown_mode == GSVoteRules.Cooldown.MINUTES:
 		if rules.cooldown_minutes <= 0.0:
 			return false
 
@@ -99,7 +99,7 @@ func on_cooldown(
 
 ## Seconds until this comes off cooldown, or 0. Only meaningful in MINUTES mode.
 func cooldown_remaining(id: StringName, now_sec: float = -1.0) -> float:
-	if rules == null or rules.cooldown_mode != DotVoteRules.Cooldown.MINUTES:
+	if rules == null or rules.cooldown_mode != GSVoteRules.Cooldown.MINUTES:
 		return 0.0
 
 	if not last_played_at.has(id):

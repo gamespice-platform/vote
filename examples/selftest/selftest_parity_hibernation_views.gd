@@ -2,17 +2,17 @@ extends "res://examples/selftest/selftest_triggers_ballots_rtv.gd"
 
 ## Selftest sections: rtv parity, hibernation, empty server, no votes and the clock view.
 
-var _v_rtv_parity_director: DotVoteDirector
-var _v_rtv_parity_keeper: DotVoteDirector
+var _v_rtv_parity_director: GSVoteDirector
+var _v_rtv_parity_keeper: GSVoteDirector
 var _v_rtv_parity_forward: Array
-var _v_rtv_parity_bringer: DotVoteDirector
-var _v_hibernation_rules: DotVoteRules
-var _v_hibernation_director: DotVoteDirector
+var _v_rtv_parity_bringer: GSVoteDirector
+var _v_hibernation_rules: GSVoteRules
+var _v_hibernation_director: GSVoteDirector
 var _v_hibernation_server: FakeHibernatingServer
 var _v_empty_server_ids: Array
 var _v_empty_server_stayed: int
-var _v_clock_view_view: DotVoteClockView
-var _v_clock_view_director: DotVoteDirector
+var _v_clock_view_view: GSVoteClockView
+var _v_clock_view_director: GSVoteDirector
 
 
 func _test_rtv_parity() -> void:
@@ -21,7 +21,7 @@ func _test_rtv_parity() -> void:
 	# The winner of a rock-the-vote ballot can wait for the end of the map.
 	var applied := []
 	var rules := _rules()
-	rules.rtv_apply = DotVoteRules.Apply.END_OF_TIME
+	rules.rtv_apply = GSVoteRules.Apply.END_OF_TIME
 	_v_rtv_parity_director = _rtv_director(rules, applied)
 
 	for i in range(20):
@@ -32,8 +32,8 @@ func _test_rtv_parity() -> void:
 
 	_check(_v_rtv_parity_director.is_voting(), "two of four rock the vote and a ballot opens")
 	_check(
-		_v_rtv_parity_director.ballot.option_ids().has(DotVoteBallot.KEEP)
-			and not _v_rtv_parity_director.ballot.option_ids().has(DotVoteBallot.EXTEND),
+		_v_rtv_parity_director.ballot.option_ids().has(GSVoteBallot.KEEP)
+			and not _v_rtv_parity_director.ballot.option_ids().has(GSVoteBallot.EXTEND),
 		"offering 'don't change' rather than 'extend'"
 	)
 
@@ -75,7 +75,7 @@ func _test_rtv_parity_2() -> void:
 
 	_v_rtv_parity_keeper.rock_the_vote(&"p1")
 	_v_rtv_parity_keeper.rock_the_vote(&"p2")
-	_v_rtv_parity_keeper.cast_one(&"p1", DotVoteBallot.KEEP)
+	_v_rtv_parity_keeper.cast_one(&"p1", GSVoteBallot.KEEP)
 
 	for i in range(5):
 		_v_rtv_parity_keeper.advance(1.0)
@@ -93,7 +93,7 @@ func _test_rtv_parity_2() -> void:
 
 	var again := _v_rtv_parity_keeper.rock_the_vote(&"p1")
 	_check(
-		not again.ok and again.code() == DotError.CODE_RATE_LIMITED,
+		not again.ok and again.code() == GSError.CODE_RATE_LIMITED,
 		"and rocking the vote is refused for the interval after",
 		str(again.error)
 	)
@@ -125,7 +125,7 @@ func _test_rtv_parity_3() -> void:
 
 	var denied := []
 	var deny_rules := _rules()
-	deny_rules.rtv_after_decided = DotVoteRules.RtvAfterDecided.DENY
+	deny_rules.rtv_after_decided = GSVoteRules.RtvAfterDecided.DENY
 	var denier := _rtv_director(deny_rules, denied)
 	denier.set_next(&"c")
 
@@ -162,15 +162,15 @@ func _test_hibernation() -> void:
 	_section("A hibernating server's clock waits, and starts again from the top when somebody joins")
 
 	var applied := []
-	var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
-	source.apply_fn = func(id: StringName) -> DotResult:
+	var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	_v_hibernation_rules = _rules()
 	_v_hibernation_rules.duration_sec = 100.0
 	_v_hibernation_rules.vote_lead_sec = 20.0
-	_v_hibernation_rules.apply = DotVoteRules.Apply.IMMEDIATE
+	_v_hibernation_rules.apply = GSVoteRules.Apply.IMMEDIATE
 
 	_check(_v_hibernation_rules.wake_restart, "waking starts the clock again by default")
 
@@ -236,7 +236,7 @@ func _test_hibernation_2() -> void:
 	var asleep_server := FakeHibernatingServer.new()
 	asleep_server.asleep = true
 	add_child(asleep_server)
-	var late := _make_director(_rules(), DotVoteListSource.of(_choices(["a", "b"])))
+	var late := _make_director(_rules(), GSVoteListSource.of(_choices(["a", "b"])))
 	late.begin(&"a")
 	late.follow_hibernation(asleep_server)
 	_check(late.hibernating, "a director following a server that is already asleep starts asleep")
@@ -246,7 +246,7 @@ func _test_hibernation_2() -> void:
 	resume_rules.duration_sec = 100.0
 	resume_rules.vote_lead_sec = 20.0
 	resume_rules.wake_restart = false
-	var resumer := _make_director(resume_rules, DotVoteListSource.of(_choices(["a", "b"])))
+	var resumer := _make_director(resume_rules, GSVoteListSource.of(_choices(["a", "b"])))
 	resumer.begin(&"a")
 
 	for i in range(40):
@@ -270,7 +270,7 @@ func _test_empty_server() -> void:
 	_section("A server that does not hibernate changes map on its own when nobody is there")
 
 	_check(
-		DotVoteRules.new().empty_choice == DotVoteRules.EmptyChoice.RANDOM,
+		GSVoteRules.new().empty_choice == GSVoteRules.EmptyChoice.RANDOM,
 		"an empty server's limit draws at random by default"
 	)
 
@@ -279,7 +279,7 @@ func _test_empty_server() -> void:
 	var all_good := true
 
 	for seed_value in range(1, 25):
-		var applied := _empty_run(DotVoteRules.EmptyChoice.RANDOM, _v_empty_server_ids, seed_value)
+		var applied := _empty_run(GSVoteRules.EmptyChoice.RANDOM, _v_empty_server_ids, seed_value)
 
 		if applied.size() != 1 or applied[0] == &"a" or not _v_empty_server_ids.has(String(applied[0])):
 			all_good = false
@@ -300,7 +300,7 @@ func _test_empty_server() -> void:
 	_v_empty_server_stayed = 0
 
 	for seed_value in range(1, 25):
-		if _empty_run(DotVoteRules.EmptyChoice.RANDOM, ["a", "b"], seed_value, true) != [&"b"]:
+		if _empty_run(GSVoteRules.EmptyChoice.RANDOM, ["a", "b"], seed_value, true) != [&"b"]:
 			_v_empty_server_stayed += 1
 
 	_test_empty_server_2()
@@ -312,20 +312,20 @@ func _test_empty_server_2() -> void:
 		"never the map that was running, even where a ballot may offer it (%d of 24 did not move)" % _v_empty_server_stayed
 	)
 	_check(
-		_empty_run(DotVoteRules.EmptyChoice.ROTATION, _v_empty_server_ids, 1) == [&"b"],
+		_empty_run(GSVoteRules.EmptyChoice.ROTATION, _v_empty_server_ids, 1) == [&"b"],
 		"rotation takes the next in order instead"
 	)
 	_check(
-		_empty_run(DotVoteRules.EmptyChoice.WAIT, _v_empty_server_ids, 1).is_empty(),
+		_empty_run(GSVoteRules.EmptyChoice.WAIT, _v_empty_server_ids, 1).is_empty(),
 		"and wait changes nothing, as before"
 	)
 
 	# Before the limit: nothing happens at the lead, because nobody is there to ask.
 	var applied := []
-	var source := DotVoteListSource.of(_choices(_v_empty_server_ids))
-	source.apply_fn = func(id: StringName) -> DotResult:
+	var source := GSVoteListSource.of(_choices(_v_empty_server_ids))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	var rules := _rules()
 	rules.duration_sec = 100.0
 	rules.vote_lead_sec = 20.0
@@ -359,10 +359,10 @@ func _test_empty_server_2() -> void:
 func _empty_server_lonely() -> void:
 	# A one-map server has nowhere to go and carries on with a fresh clock.
 	var lonely_applied := []
-	var lonely_source := DotVoteListSource.of(_choices(["a"]))
-	lonely_source.apply_fn = func(id: StringName) -> DotResult:
+	var lonely_source := GSVoteListSource.of(_choices(["a"]))
+	lonely_source.apply_fn = func(id: StringName) -> GSResult:
 		lonely_applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	var lonely_rules := _rules()
 	lonely_rules.duration_sec = 100.0
 	var lonely := _make_director(lonely_rules, lonely_source)
@@ -383,22 +383,22 @@ func _test_no_votes() -> void:
 	_section("A ballot nobody voted in, three ways")
 
 	for policy: Variant in [
-		DotVoteRules.NoVotes.KEEP,
-		DotVoteRules.NoVotes.RANDOM,
-		DotVoteRules.NoVotes.ROTATION,
+		GSVoteRules.NoVotes.KEEP,
+		GSVoteRules.NoVotes.RANDOM,
+		GSVoteRules.NoVotes.ROTATION,
 	]:
 		var applied := []
-		var source := DotVoteListSource.of(_choices(["a", "b", "c", "d"]))
-		source.apply_fn = func(id: StringName) -> DotResult:
+		var source := GSVoteListSource.of(_choices(["a", "b", "c", "d"]))
+		source.apply_fn = func(id: StringName) -> GSResult:
 			applied.append(id)
-			return DotResult.success(id)
+			return GSResult.success(id)
 
 		var rules := _rules()
-		rules.on_no_votes = policy as DotVoteRules.NoVotes
+		rules.on_no_votes = policy as GSVoteRules.NoVotes
 		rules.include_extend = true
 		rules.duration_sec = 600.0
 		rules.cooldown = 0
-		rules.apply = DotVoteRules.Apply.IMMEDIATE
+		rules.apply = GSVoteRules.Apply.IMMEDIATE
 
 		var director := _make_director(rules, source)
 		director.begin(&"a")
@@ -408,15 +408,15 @@ func _test_no_votes() -> void:
 		var result := director.close_vote()
 
 		match policy:
-			DotVoteRules.NoVotes.KEEP:
+			GSVoteRules.NoVotes.KEEP:
 				_check(
-					applied.is_empty() and result.outcome == DotVoteResult.Outcome.EMPTY,
+					applied.is_empty() and result.outcome == GSVoteResult.Outcome.EMPTY,
 					"KEEP stays where it is"
 				)
-			DotVoteRules.NoVotes.RANDOM:
+			GSVoteRules.NoVotes.RANDOM:
 				_check(
 					applied.size() == 1 and applied[0] != &"a"
-						and result.outcome == DotVoteResult.Outcome.WINNER,
+						and result.outcome == GSVoteResult.Outcome.WINNER,
 					"RANDOM draws one of the ballot's options (%s)" % str(applied)
 				)
 				_check(
@@ -439,24 +439,24 @@ func _test_no_votes_2() -> void:
 	# The same at the end of a map, through the clock, with players present and nobody
 	# voting: keep is the default and restarts the clock (what players see as "it
 	# extended"); random picks one of the ballot's maps instead, never Extend.
-	_check(DotVoteRules.new().on_no_votes == DotVoteRules.NoVotes.KEEP, "keep is the default")
+	_check(GSVoteRules.new().on_no_votes == GSVoteRules.NoVotes.KEEP, "keep is the default")
 
-	for policy: Variant in [DotVoteRules.NoVotes.KEEP, DotVoteRules.NoVotes.RANDOM]:
+	for policy: Variant in [GSVoteRules.NoVotes.KEEP, GSVoteRules.NoVotes.RANDOM]:
 		var applied := []
-		var source := DotVoteListSource.of(_choices(["a", "b", "c", "d"]))
-		source.apply_fn = func(id: StringName) -> DotResult:
+		var source := GSVoteListSource.of(_choices(["a", "b", "c", "d"]))
+		source.apply_fn = func(id: StringName) -> GSResult:
 			applied.append(id)
-			return DotResult.success(id)
+			return GSResult.success(id)
 
 		var rules := _rules()
-		rules.on_no_votes = policy as DotVoteRules.NoVotes
+		rules.on_no_votes = policy as GSVoteRules.NoVotes
 		rules.include_extend = true
 		rules.duration_sec = 100.0
 		rules.vote_lead_sec = 30.0
 		rules.vote_warning_sec = 0.0
 		rules.vote_duration_sec = 10.0
 		rules.cooldown = 0
-		rules.apply = DotVoteRules.Apply.END_OF_TIME
+		rules.apply = GSVoteRules.Apply.END_OF_TIME
 
 		var director := _make_director(rules, source)
 		director.begin(&"a")
@@ -470,7 +470,7 @@ func _test_no_votes_2() -> void:
 		for i in range(30):
 			director.advance(1.0)
 
-		if policy == DotVoteRules.NoVotes.KEEP:
+		if policy == GSVoteRules.NoVotes.KEEP:
 			_check(
 				opened and applied.is_empty() and not director.clock.is_expired()
 					and director.clock.remaining > 60.0,
@@ -479,7 +479,7 @@ func _test_no_votes_2() -> void:
 		else:
 			_check(
 				opened and applied.size() == 1 and applied[0] != &"a"
-					and applied[0] != DotVoteBallot.EXTEND and applied[0] != DotVoteBallot.KEEP,
+					and applied[0] != GSVoteBallot.EXTEND and applied[0] != GSVoteBallot.KEEP,
 				"at the end of a map, random picks one of the ballot's maps, never Extend (%s)" % str(applied)
 			)
 
@@ -491,17 +491,17 @@ func _test_no_votes_2() -> void:
 func _test_clock_view() -> void:
 	_section("A client's view of the clock follows an extend, and shows none when there is none")
 
-	_v_clock_view_view = DotVoteClockView.new()
+	_v_clock_view_view = GSVoteClockView.new()
 	_check(
 		not _v_clock_view_view.known and _v_clock_view_view.formatted_at(0.0) == "",
 		"a view never told anything shows nothing"
 	)
 	_check(
-		not bool(DotVoteClockView.state_of(null)["has_clock"]),
+		not bool(GSVoteClockView.state_of(null)["has_clock"]),
 		"a server with no vote has no clock to show"
 	)
 
-	var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
+	var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
 	var rules := _rules()
 	rules.duration_sec = 300.0
 	rules.vote_lead_sec = 30.0
@@ -511,7 +511,7 @@ func _test_clock_view() -> void:
 	_v_clock_view_director.begin(&"a")
 
 	_check(_v_clock_view_view.is_stale(_v_clock_view_director, 0.0), "and is stale against a running clock")
-	_v_clock_view_view.adopt(DotVoteClockView.state_of(_v_clock_view_director), 0.0)
+	_v_clock_view_view.adopt(GSVoteClockView.state_of(_v_clock_view_director), 0.0)
 	_check(
 		_v_clock_view_view.has_clock and _v_clock_view_view.running and _v_clock_view_view.formatted_at(0.0) == "5:00",
 		"adopted, it shows the clock's own limit (%s)" % _v_clock_view_view.formatted_at(0.0)
@@ -532,18 +532,18 @@ func _test_clock_view() -> void:
 	# And a running clock that agrees is still re-sent every RESYNC_SEC, because the two
 	# ends count on different clocks and nothing else would correct a server that fell
 	# behind real time. A separate director, so the extension below starts from ten.
-	var steady := _make_director(rules, DotVoteListSource.of(_choices(["a", "b"])))
+	var steady := _make_director(rules, GSVoteListSource.of(_choices(["a", "b"])))
 	steady.self_advance = false
 	steady.begin(&"a")
-	var steady_view := DotVoteClockView.new()
-	steady_view.adopt(DotVoteClockView.state_of(steady), 0.0)
+	var steady_view := GSVoteClockView.new()
+	steady_view.adopt(GSVoteClockView.state_of(steady), 0.0)
 	for i in range(29):
 		steady.advance(1.0)
 	var quiet_at_29 := not steady_view.is_stale(steady, 29.0)
 	steady.advance(1.0)
 	_check(
-		quiet_at_29 and steady_view.is_stale(steady, DotVoteClockView.RESYNC_SEC),
-		"a clock that agrees stays quiet, and is re-sent every %d s anyway" % int(DotVoteClockView.RESYNC_SEC)
+		quiet_at_29 and steady_view.is_stale(steady, GSVoteClockView.RESYNC_SEC),
+		"a clock that agrees stays quiet, and is re-sent every %d s anyway" % int(GSVoteClockView.RESYNC_SEC)
 	)
 	steady.queue_free()
 
@@ -557,7 +557,7 @@ func _test_clock_view_2() -> void:
 		"which makes the view stale",
 		"a client would go on showing the old limit"
 	)
-	_v_clock_view_view.adopt(DotVoteClockView.state_of(_v_clock_view_director), 10.0)
+	_v_clock_view_view.adopt(GSVoteClockView.state_of(_v_clock_view_director), 10.0)
 	_check(
 		_v_clock_view_view.formatted_at(10.0) == "6:50",
 		"and once re-sent it shows the extension (%s)" % _v_clock_view_view.formatted_at(10.0)
@@ -565,7 +565,7 @@ func _test_clock_view_2() -> void:
 
 	_v_clock_view_director.clock.stop()
 	_check(_v_clock_view_view.is_stale(_v_clock_view_director, 11.0), "a clock that stops is stale too")
-	_v_clock_view_view.adopt(DotVoteClockView.state_of(_v_clock_view_director), 11.0)
+	_v_clock_view_view.adopt(GSVoteClockView.state_of(_v_clock_view_director), 11.0)
 	_check(
 		_v_clock_view_view.formatted_at(40.0) == _v_clock_view_view.formatted_at(11.0),
 		"and a stopped clock holds still on the client (%s)" % _v_clock_view_view.formatted_at(40.0)
@@ -573,11 +573,11 @@ func _test_clock_view_2() -> void:
 
 	var none := _rules()
 	none.duration_sec = 0.0
-	none.trigger = DotVoteRules.Trigger.RTV_ONLY
-	var clockless := _make_director(none, DotVoteListSource.of(_choices(["a", "b"])))
+	none.trigger = GSVoteRules.Trigger.RTV_ONLY
+	var clockless := _make_director(none, GSVoteListSource.of(_choices(["a", "b"])))
 	clockless.begin(&"a")
-	var told := DotVoteClockView.new()
-	told.adopt(DotVoteClockView.state_of(clockless), 0.0)
+	var told := GSVoteClockView.new()
+	told.adopt(GSVoteClockView.state_of(clockless), 0.0)
 	_check(
 		told.known and not told.has_clock and told.formatted_at(0.0) == "",
 		"an rtv-only vote with no limit is told, and shows no clock"
@@ -585,11 +585,11 @@ func _test_clock_view_2() -> void:
 
 	var manual := _rules()
 	manual.duration_sec = 600.0
-	manual.trigger = DotVoteRules.Trigger.MANUAL
-	var host_decides := _make_director(manual, DotVoteListSource.of(_choices(["a", "b"])))
+	manual.trigger = GSVoteRules.Trigger.MANUAL
+	var host_decides := _make_director(manual, GSVoteListSource.of(_choices(["a", "b"])))
 	host_decides.begin(&"a")
 	_check(
-		not bool(DotVoteClockView.state_of(host_decides)["has_clock"]),
+		not bool(GSVoteClockView.state_of(host_decides)["has_clock"]),
 		"nor does a manual one, whose count reaching zero ends nothing"
 	)
 

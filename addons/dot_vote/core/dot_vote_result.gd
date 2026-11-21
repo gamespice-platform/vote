@@ -1,7 +1,7 @@
-class_name DotVoteResult
+class_name GSVoteResult
 extends RefCounted
 
-## What a ballot decided, and how; returned by [method DotVoteBallot.resolve], never null.
+## What a ballot decided, and how; returned by [method GSVoteBallot.resolve], never null.
 ## The "how" lets the announcement say why ("FC wins (tie, nominated first)"), the difference between a rule and a coin flip to anyone watching.
 
 ## What the ballot came to.
@@ -26,12 +26,12 @@ var outcome: Outcome = Outcome.EMPTY
 var winner_id: StringName = &""
 
 ## The winning choice, when the ballot held one. Null for extend, keep and empty.
-var winner: DotVoteChoice = null
+var winner: GSVoteChoice = null
 
 ## Final counts, by id. Includes zero-vote options, so a tally renders in full.
 var counts: Dictionary = {}
 
-## Per-round counts under [constant DotVoteRules.Method.INSTANT_RUNOFF], first round
+## Per-round counts under [constant GSVoteRules.Method.INSTANT_RUNOFF], first round
 ## first. Empty for every other method.
 var rounds: Array = []
 
@@ -45,7 +45,7 @@ var votes_cast: int = 0
 var eligible: int = 0
 
 ## Ballots cast as "no vote". Counted toward nothing; see
-## [member DotVoteRules.include_abstain].
+## [member GSVoteRules.include_abstain].
 var abstained: int = 0
 
 ## Whether the ballot was decided by a tie-break, and by which one; empty when nothing was tied.
@@ -58,8 +58,8 @@ var tied_ids: Array[StringName] = []
 var summary: String = ""
 
 
-static func empty(why: String = "Nothing was on the ballot.") -> DotVoteResult:
-	var result := DotVoteResult.new()
+static func empty(why: String = "Nothing was on the ballot.") -> GSVoteResult:
+	var result := GSVoteResult.new()
 	result.outcome = Outcome.EMPTY
 	result.summary = why
 	return result
@@ -114,4 +114,4 @@ func describe() -> Dictionary:
 
 
 func _to_string() -> String:
-	return "DotVoteResult(%s, %s)" % [Outcome.keys()[outcome], summary]
+	return "GSVoteResult(%s, %s)" % [Outcome.keys()[outcome], summary]

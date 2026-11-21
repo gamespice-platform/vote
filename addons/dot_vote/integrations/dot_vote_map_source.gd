@@ -1,19 +1,19 @@
-class_name DotVoteMapSource
-extends DotVoteSource
+class_name GSVoteMapSource
+extends GSVoteSource
 
-## Votes over the maps in a [code]DotMapCatalogue[/code].
-## Same shape as [DotVoteGameSource], naming no GameSpice Map class; the catalogue and session are duck-typed.
-## It does not replace GameSpice Map's own [code]DotMapVote[/code]; it is for runoffs, quorums, per-map limits and the other [DotVoteRules] settings. Per-map settings sit in the map's [code]meta.vote[/code].
+## Votes over the maps in a [code]GSMapCatalogue[/code].
+## Same shape as [GSVoteGameSource], naming no GameSpice Map class; the catalogue and session are duck-typed.
+## It does not replace GameSpice Map's own [code]GSMapVote[/code]; it is for runoffs, quorums, per-map limits and the other [GSVoteRules] settings. Per-map settings sit in the map's [code]meta.vote[/code].
 
 const CHANNEL := "vote.maps"
 
 ## The metadata key per-map vote settings are read from.
 const META_KEY := "vote"
 
-## A [code]DotMapCatalogue[/code]. Duck-typed.
+## A [code]GSMapCatalogue[/code]. Duck-typed.
 var catalogue: Object = null
 
-## A [code]DotMapSession[/code], for [method apply]. Optional: without one this source
+## A [code]GSMapSession[/code], for [method apply]. Optional: without one this source
 ## lists and the host does the change.
 var session: Object = null
 
@@ -25,7 +25,7 @@ var kinds: Array[StringName] = []
 var excluded: Array[StringName] = []
 
 
-static func of(p_catalogue: Object, p_session: Object = null) -> DotVoteMapSource:
+static func of(p_catalogue: Object, p_session: Object = null) -> GSVoteMapSource:
 	# Not this class's own name. A script that names itself in an expression, loaded after
 	# its base, cuts Godot 4.7.2's exit teardown short and leaks every script loaded before
 	# it. See docs/gdscript-hazards.md, "A script that names itself".
@@ -35,8 +35,8 @@ static func of(p_catalogue: Object, p_session: Object = null) -> DotVoteMapSourc
 	return source
 
 
-## Builds one from a [code]DotMapSession[/code] alone, taking its catalogue.
-static func from_session(p_session: Object) -> DotVoteMapSource:
+## Builds one from a [code]GSMapSession[/code] alone, taking its catalogue.
+static func from_session(p_session: Object) -> GSVoteMapSource:
 	if p_session == null:
 		return of(null, null)
 
@@ -51,8 +51,8 @@ func is_usable() -> bool:
 	return catalogue != null and (catalogue.get("maps") is Array)
 
 
-func choices() -> Array[DotVoteChoice]:
-	var out: Array[DotVoteChoice] = []
+func choices() -> Array[GSVoteChoice]:
+	var out: Array[GSVoteChoice] = []
 
 	if catalogue == null:
 		return out
@@ -60,7 +60,7 @@ func choices() -> Array[DotVoteChoice]:
 	var maps: Variant = catalogue.get("maps")
 
 	if not (maps is Array):
-		DotLog.warn(CHANNEL, "the catalogue has no maps array", {
+		GSLog.warn(CHANNEL, "the catalogue has no maps array", {
 			"catalogue": str(catalogue)
 		})
 		return out
@@ -77,7 +77,7 @@ func choices() -> Array[DotVoteChoice]:
 	return out
 
 
-func _to_choice(map: Object) -> DotVoteChoice:
+func _to_choice(map: Object) -> GSVoteChoice:
 	var id := StringName(str(map.get("id")))
 
 	if id == &"" or excluded.has(id):
@@ -95,7 +95,7 @@ func _to_choice(map: Object) -> DotVoteChoice:
 	if not kinds.is_empty() and not kinds.has(kind):
 		return null
 
-	var choice := DotVoteChoice.new()
+	var choice := GSVoteChoice.new()
 	choice.id = id
 	choice.display_name = str(map.get("display_name"))
 	choice.description = str(map.get("description"))
@@ -106,7 +106,7 @@ func _to_choice(map: Object) -> DotVoteChoice:
 	var enabled: Variant = map.get("enabled")
 	choice.enabled = bool(enabled) if enabled != null else true
 
-	# A map's expected length is a property of the MAP, which is why DotVoteChoice carries a
+	# A map's expected length is a property of the MAP, which is why GSVoteChoice carries a
 	# time limit; one global limit would cut a ten-minute map and drag a forty-minute one.
 	var expected := int(map.get("expected_seconds"))
 
@@ -123,7 +123,7 @@ func _to_choice(map: Object) -> DotVoteChoice:
 	return choice
 
 
-func _apply_meta(choice: DotVoteChoice, raw: Variant) -> void:
+func _apply_meta(choice: GSVoteChoice, raw: Variant) -> void:
 	if not (raw is Dictionary):
 		return
 
@@ -171,22 +171,22 @@ func supports_apply() -> bool:
 
 
 ## Changes the map. A coroutine: a delivered map is fetched before the world swaps.
-func apply(id: StringName) -> DotResult:
+func apply(id: StringName) -> GSResult:
 	if not supports_apply():
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"No map session to change with.",
-			"give DotVoteMapSource a session, or let the host act on change_due"
+			"give GSVoteMapSource a session, or let the host act on change_due"
 		)
 
-	DotLog.info(CHANNEL, "changing map by vote", {"to": String(id)})
+	GSLog.info(CHANNEL, "changing map by vote", {"to": String(id)})
 
 	var result: Variant = await session.call("change_to", id)
 
-	if result is DotResult:
-		return result as DotResult
+	if result is GSResult:
+		return result as GSResult
 
-	return DotResult.success(id)
+	return GSResult.success(id)
 
 
 func describe() -> Dictionary:

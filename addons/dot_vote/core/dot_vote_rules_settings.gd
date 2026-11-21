@@ -1,13 +1,13 @@
 @tool
-extends DotConfig
+extends GSConfig
 
-## The enums and exported settings of [DotVoteRules], kept apart so each file stays readable.
+## The enums and exported settings of [GSVoteRules], kept apart so each file stays readable.
 
-## Not [code]CHANNEL[/code]: [DotConfig] already declares one, and a subclass that
+## Not [code]CHANNEL[/code]: [GSConfig] already declares one, and a subclass that
 ## redeclares a parent's member does not parse.
 const RULES_CHANNEL := "vote.rules"
 
-## The addon name [DotAddonConfig] turns into the folder `dot_vote`.
+## The addon name [GSAddonConfig] turns into the folder `dot_vote`.
 const CFG_ADDON := "dot-vote"
 
 ## When a vote happens at all.
@@ -15,16 +15,16 @@ enum Trigger {
 	## The clock runs out (or [member vote_lead_sec] before it does).
 	TIME_LIMIT,
 	## At the end of a round: a limit reaching its lead mid-round waits for the host's next
-	## [method DotVoteDirector.note_round_end], so no ballot opens over a fight.
+	## [method GSVoteDirector.note_round_end], so no ballot opens over a fight.
 	ROUND_END,
 	## Only when enough players rock the vote. No clock.
 	RTV_ONLY,
-	## The scheduled ballot opens only when the host asks ([method DotVoteDirector.start_vote]).
+	## The scheduled ballot opens only when the host asks ([method GSVoteDirector.start_vote]).
 	## A passed rock-the-vote still opens one, as under every trigger.
 	MANUAL,
 	## When the leading score reaches [member score_limit] (or [member vote_lead_score]
 	## before it does). A frag limit, a team win limit, a points target — whatever the
-	## host feeds [method DotVoteDirector.note_score].
+	## host feeds [method GSVoteDirector.note_score].
 	SCORE_LIMIT,
 }
 
@@ -32,7 +32,7 @@ enum Trigger {
 enum Fill {
 	## Uniformly at random from what is eligible.
 	RANDOM,
-	## At random, in proportion to [member DotVoteChoice.weight].
+	## At random, in proportion to [member GSVoteChoice.weight].
 	WEIGHTED,
 	## Straight down the source's order, wrapping. Predictable, and what a small
 	## server wants: everything gets its turn.
@@ -141,7 +141,7 @@ enum TimeUp {
 	## The change happens the moment the limit is up, mid-round or not.
 	CHANGE_NOW,
 	## The round in progress is played out and the change happens when it ends. Only on a
-	## host that reports rounds ([member DotVoteDirector.round_based]); everywhere else
+	## host that reports rounds ([member GSVoteDirector.round_based]); everywhere else
 	## there is no round to finish and this is [constant CHANGE_NOW].
 	FINISH_ROUND,
 }
@@ -433,7 +433,7 @@ enum RtvAfterDecided {
 
 @export_group("Cues")
 
-## Sound cue ids, emitted through [signal DotVoteDirector.cue] for the host to play.
+## Sound cue ids, emitted through [signal GSVoteDirector.cue] for the host to play.
 ## [b]Empty is silent[/b], and every one ships empty.
 
 ## A ballot opened.

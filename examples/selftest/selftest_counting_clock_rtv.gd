@@ -2,8 +2,8 @@ extends "res://examples/selftest/selftest_votebans_menus_nominations.gd"
 
 ## Selftest sections: counting, tie breaks, the clock and rock-the-vote.
 
-var _v_counting_approval_rules: DotVoteRules
-var _v_clock_rules: DotVoteRules
+var _v_counting_approval_rules: GSVoteRules
+var _v_clock_rules: GSVoteRules
 
 
 func _test_counting() -> void:
@@ -12,7 +12,7 @@ func _test_counting() -> void:
 	var rules := _rules()
 	rules.include_extend = false
 
-	var ballot := DotVoteBallot.of(rules)
+	var ballot := GSVoteBallot.of(rules)
 	ballot.begin(_choices(["a", "b", "c"]), 5)
 
 	ballot.cast_vote(&"v1", _one(&"a"))
@@ -27,14 +27,14 @@ func _test_counting() -> void:
 
 	var result := ballot.resolve()
 	_check(result.winner_id == &"a", "and the most votes wins")
-	_check(result.outcome == DotVoteResult.Outcome.WINNER, "with a WINNER outcome")
+	_check(result.outcome == GSVoteResult.Outcome.WINNER, "with a WINNER outcome")
 	_check(result.votes_cast == 3 and result.eligible == 5, "turnout is recorded")
 	_check(result.summary.contains("2 votes"), "and the summary says so", result.summary)
 	_check(result.ordered()[0][0] == &"a", "the tally orders for a HUD")
 
 	# A player who misclicks must be able to change their mind. It is also what makes
 	# a live tally worth showing.
-	var changeable := DotVoteBallot.of(rules)
+	var changeable := GSVoteBallot.of(rules)
 	changeable.begin(_choices(["a", "b"]), 2)
 	changeable.cast_vote(&"v1", _one(&"a"))
 	changeable.cast_vote(&"v1", _one(&"b"))
@@ -46,7 +46,7 @@ func _test_counting() -> void:
 
 	var locked_rules := _rules()
 	locked_rules.changeable_until_close = false
-	var locked := DotVoteBallot.of(locked_rules)
+	var locked := GSVoteBallot.of(locked_rules)
 	locked.begin(_choices(["a", "b"]), 2)
 	locked.cast_vote(&"v1", _one(&"a"))
 	_check(
@@ -61,7 +61,7 @@ func _test_counting() -> void:
 
 	# Approval.
 	_v_counting_approval_rules = _rules()
-	_v_counting_approval_rules.method = DotVoteRules.Method.APPROVAL
+	_v_counting_approval_rules.method = GSVoteRules.Method.APPROVAL
 	_v_counting_approval_rules.include_extend = false
 	_v_counting_approval_rules.approval_max_choices = 2
 
@@ -69,7 +69,7 @@ func _test_counting() -> void:
 
 
 func _test_counting_2() -> void:
-	var approval := DotVoteBallot.of(_v_counting_approval_rules)
+	var approval := GSVoteBallot.of(_v_counting_approval_rules)
 	approval.begin(_choices(["a", "b", "c"]), 3)
 	approval.cast_vote(&"v1", [&"a", &"b"] as Array[StringName])
 	approval.cast_vote(&"v2", [&"b", &"c"] as Array[StringName])
@@ -88,7 +88,7 @@ func _test_counting_2() -> void:
 	_check(approval.resolve().winner_id == &"b", "and the most approvals wins")
 
 	# Plurality given a ranked ballot.
-	var ranked_at_plurality := DotVoteBallot.of(_rules())
+	var ranked_at_plurality := GSVoteBallot.of(_rules())
 	ranked_at_plurality.begin(_choices(["a", "b"]), 2)
 	ranked_at_plurality.cast_vote(&"v1", [&"b", &"a"] as Array[StringName])
 	_check(
@@ -101,10 +101,10 @@ func _test_counting_2() -> void:
 	# Instant runoff: nobody has a majority on the first count, and the transfer
 	# decides it. The classic case, and the one a plurality gets wrong.
 	var irv_rules := _rules()
-	irv_rules.method = DotVoteRules.Method.INSTANT_RUNOFF
+	irv_rules.method = GSVoteRules.Method.INSTANT_RUNOFF
 	irv_rules.include_extend = false
 
-	var irv := DotVoteBallot.of(irv_rules)
+	var irv := GSVoteBallot.of(irv_rules)
 	irv.begin(_choices(["a", "b", "c"]), 5)
 	irv.cast_vote(&"v1", [&"a"] as Array[StringName])
 	irv.cast_vote(&"v2", [&"a"] as Array[StringName])
@@ -130,11 +130,11 @@ func _test_counting_2() -> void:
 func _test_counting_3() -> void:
 	# Majority runoff: no majority on the first count, so the top two go again.
 	var majority_rules := _rules()
-	majority_rules.method = DotVoteRules.Method.MAJORITY_RUNOFF
+	majority_rules.method = GSVoteRules.Method.MAJORITY_RUNOFF
 	majority_rules.include_extend = false
 	majority_rules.max_runoffs = 1
 
-	var majority := DotVoteBallot.of(majority_rules)
+	var majority := GSVoteBallot.of(majority_rules)
 	majority.begin(_choices(["a", "b", "c"]), 5)
 	majority.cast_vote(&"v1", _one(&"a"))
 	majority.cast_vote(&"v2", _one(&"a"))
@@ -144,7 +144,7 @@ func _test_counting_3() -> void:
 
 	var first_round := majority.resolve()
 	_check(
-		first_round.outcome == DotVoteResult.Outcome.RUNOFF,
+		first_round.outcome == GSVoteResult.Outcome.RUNOFF,
 		"no majority sends the top two to a runoff"
 	)
 	_check(
@@ -171,7 +171,7 @@ func _test_counting_3() -> void:
 	)
 
 	# Weighted ballots.
-	var weighted := DotVoteBallot.of(_rules())
+	var weighted := GSVoteBallot.of(_rules())
 	weighted.begin(_choices(["a", "b"]), 3)
 	weighted.cast_vote(&"v1", _one(&"a"))
 	weighted.cast_vote(&"v2", _one(&"b"))
@@ -193,10 +193,10 @@ func _test_tie_breaks() -> void:
 	extend_rules.include_extend = true
 	extend_rules.extend_needs_majority = true
 
-	var tied_with_extend := DotVoteBallot.of(extend_rules)
+	var tied_with_extend := GSVoteBallot.of(extend_rules)
 	tied_with_extend.begin(_choices(["a"]), 2)
 	tied_with_extend.cast_vote(&"v1", _one(&"a"))
-	tied_with_extend.cast_vote(&"v2", _one(DotVoteBallot.EXTEND))
+	tied_with_extend.cast_vote(&"v2", _one(GSVoteBallot.EXTEND))
 
 	var extend_tie := tied_with_extend.resolve()
 	_check(
@@ -205,24 +205,24 @@ func _test_tie_breaks() -> void:
 		"a server that ties toward the status quo never changes anything"
 	)
 
-	var extend_wins := DotVoteBallot.of(extend_rules)
+	var extend_wins := GSVoteBallot.of(extend_rules)
 	extend_wins.begin(_choices(["a"]), 3)
 	extend_wins.cast_vote(&"v1", _one(&"a"))
-	extend_wins.cast_vote(&"v2", _one(DotVoteBallot.EXTEND))
-	extend_wins.cast_vote(&"v3", _one(DotVoteBallot.EXTEND))
+	extend_wins.cast_vote(&"v2", _one(GSVoteBallot.EXTEND))
+	extend_wins.cast_vote(&"v3", _one(GSVoteBallot.EXTEND))
 	_check(
-		extend_wins.resolve().outcome == DotVoteResult.Outcome.EXTEND,
+		extend_wins.resolve().outcome == GSVoteResult.Outcome.EXTEND,
 		"and extend wins outright when it actually leads"
 	)
 
 	var lenient := _rules()
 	lenient.extend_needs_majority = false
-	var lenient_ballot := DotVoteBallot.of(lenient)
+	var lenient_ballot := GSVoteBallot.of(lenient)
 	lenient_ballot.begin(_choices(["a"]), 2)
 	lenient_ballot.cast_vote(&"v1", _one(&"a"))
-	lenient_ballot.cast_vote(&"v2", _one(DotVoteBallot.EXTEND))
+	lenient_ballot.cast_vote(&"v2", _one(GSVoteBallot.EXTEND))
 	_check(
-		lenient_ballot.resolve().outcome == DotVoteResult.Outcome.EXTEND,
+		lenient_ballot.resolve().outcome == GSVoteResult.Outcome.EXTEND,
 		"and with extend_needs_majority off the incumbent keeps a tie instead",
 		"a setting that reads differently and behaves identically is the bug this "
 		+ "whole family keeps finding"
@@ -231,13 +231,13 @@ func _test_tie_breaks() -> void:
 	var keep_rules := _rules()
 	keep_rules.include_extend = false
 	keep_rules.include_keep = true
-	var keep := DotVoteBallot.of(keep_rules)
+	var keep := GSVoteBallot.of(keep_rules)
 	keep.begin(_choices(["a"]), 3)
-	keep.cast_vote(&"v1", _one(DotVoteBallot.KEEP))
-	keep.cast_vote(&"v2", _one(DotVoteBallot.KEEP))
+	keep.cast_vote(&"v1", _one(GSVoteBallot.KEEP))
+	keep.cast_vote(&"v2", _one(GSVoteBallot.KEEP))
 	keep.cast_vote(&"v3", _one(&"a"))
 	_check(
-		keep.resolve().outcome == DotVoteResult.Outcome.KEEP,
+		keep.resolve().outcome == GSVoteResult.Outcome.KEEP,
 		"'none of these' is a separate answer from 'extend'"
 	)
 
@@ -248,9 +248,9 @@ func _test_tie_breaks_2() -> void:
 	# The five tie-breaks, on the same 1-1 tie.
 	var order_rules := _rules()
 	order_rules.include_extend = false
-	order_rules.tie_break = DotVoteRules.TieBreak.BALLOT_ORDER
+	order_rules.tie_break = GSVoteRules.TieBreak.BALLOT_ORDER
 
-	var by_order := DotVoteBallot.of(order_rules)
+	var by_order := GSVoteBallot.of(order_rules)
 	by_order.begin(_choices(["first", "second"]), 2)
 	by_order.cast_vote(&"v1", _one(&"first"))
 	by_order.cast_vote(&"v2", _one(&"second"))
@@ -270,13 +270,13 @@ func _test_tie_breaks_2() -> void:
 
 	var nom_rules := _rules()
 	nom_rules.include_extend = false
-	nom_rules.tie_break = DotVoteRules.TieBreak.NOMINATION_ORDER
+	nom_rules.tie_break = GSVoteRules.TieBreak.NOMINATION_ORDER
 
-	var noms := DotVoteNominations.of(nom_rules)
+	var noms := GSVoteNominations.of(nom_rules)
 	noms.add(&"alice", &"second")
 	noms.add(&"bob", &"first")
 
-	var by_nomination := DotVoteBallot.of(nom_rules)
+	var by_nomination := GSVoteBallot.of(nom_rules)
 	by_nomination.nominations = noms
 	by_nomination.begin(_choices(["first", "second"]), 2)
 	by_nomination.cast_vote(&"v1", _one(&"first"))
@@ -288,13 +288,13 @@ func _test_tie_breaks_2() -> void:
 
 	var lrp_rules := _rules()
 	lrp_rules.include_extend = false
-	lrp_rules.tie_break = DotVoteRules.TieBreak.LEAST_RECENTLY_PLAYED
+	lrp_rules.tie_break = GSVoteRules.TieBreak.LEAST_RECENTLY_PLAYED
 
-	var history := DotVoteHistory.of(lrp_rules)
+	var history := GSVoteHistory.of(lrp_rules)
 	history.note_played(&"second", 0.0)
 	history.note_played(&"first", 0.0)
 
-	var by_age := DotVoteBallot.of(lrp_rules)
+	var by_age := GSVoteBallot.of(lrp_rules)
 	by_age.history = history
 	by_age.begin(_choices(["first", "second"]), 2)
 	by_age.cast_vote(&"v1", _one(&"first"))
@@ -310,12 +310,12 @@ func _test_tie_breaks_2() -> void:
 func _test_tie_breaks_3() -> void:
 	var never_rules := _rules()
 	never_rules.include_extend = false
-	never_rules.tie_break = DotVoteRules.TieBreak.LEAST_RECENTLY_PLAYED
+	never_rules.tie_break = GSVoteRules.TieBreak.LEAST_RECENTLY_PLAYED
 
-	var thin_history := DotVoteHistory.of(never_rules)
+	var thin_history := GSVoteHistory.of(never_rules)
 	thin_history.note_played(&"first", 0.0)
 
-	var by_never := DotVoteBallot.of(never_rules)
+	var by_never := GSVoteBallot.of(never_rules)
 	by_never.history = thin_history
 	by_never.begin(_choices(["first", "second"]), 2)
 	by_never.cast_vote(&"v1", _one(&"first"))
@@ -328,11 +328,11 @@ func _test_tie_breaks_3() -> void:
 
 	var random_rules := _rules()
 	random_rules.include_extend = false
-	random_rules.tie_break = DotVoteRules.TieBreak.RANDOM
+	random_rules.tie_break = GSVoteRules.TieBreak.RANDOM
 	random_rules.tie_break_seed = 12345
 
 	var seed_before := random_rules.tie_break_seed
-	var by_chance := DotVoteBallot.of(random_rules)
+	var by_chance := GSVoteBallot.of(random_rules)
 	by_chance.begin(_choices(["first", "second"]), 2)
 	by_chance.cast_vote(&"v1", _one(&"first"))
 	by_chance.cast_vote(&"v2", _one(&"second"))
@@ -345,17 +345,17 @@ func _test_tie_breaks_3() -> void:
 
 	var runoff_rules := _rules()
 	runoff_rules.include_extend = false
-	runoff_rules.tie_break = DotVoteRules.TieBreak.RUNOFF
+	runoff_rules.tie_break = GSVoteRules.TieBreak.RUNOFF
 	runoff_rules.max_runoffs = 1
 
-	var by_runoff := DotVoteBallot.of(runoff_rules)
+	var by_runoff := GSVoteBallot.of(runoff_rules)
 	by_runoff.begin(_choices(["first", "second"]), 2)
 	by_runoff.cast_vote(&"v1", _one(&"first"))
 	by_runoff.cast_vote(&"v2", _one(&"second"))
 
 	var runoff_result := by_runoff.resolve()
 	_check(
-		runoff_result.outcome == DotVoteResult.Outcome.RUNOFF,
+		runoff_result.outcome == GSVoteResult.Outcome.RUNOFF,
 		"RUNOFF puts the tied options to another vote"
 	)
 	_check(
@@ -375,7 +375,7 @@ func _test_clock() -> void:
 	_v_clock_rules.vote_lead_sec = 20.0
 	_v_clock_rules.warn_at_sec = PackedStringArray(["50", "10"])
 
-	var clock := DotVoteClock.of(_v_clock_rules)
+	var clock := GSVoteClock.of(_v_clock_rules)
 
 	var warnings := []
 	var votes_due := []
@@ -387,7 +387,7 @@ func _test_clock() -> void:
 	clock.vote_due.connect(func(reason: StringName) -> void: votes_due.append(reason))
 	clock.expired.connect(func(reason: StringName) -> void: expiries.append(reason))
 
-	clock.start(DotVoteChoice.of(&"m"))
+	clock.start(GSVoteChoice.of(&"m"))
 	_check(clock.running and is_equal_approx(clock.remaining, 100.0), "the clock starts")
 
 	for i in range(45):
@@ -432,7 +432,7 @@ func _test_clock_2() -> void:
 	no_lead.vote_lead_sec = 0.0
 	no_lead.warn_at_sec = PackedStringArray()
 
-	var abrupt := DotVoteClock.of(no_lead)
+	var abrupt := GSVoteClock.of(no_lead)
 	var abrupt_due := []
 	abrupt.vote_due.connect(func(_r: StringName) -> void: abrupt_due.append(1))
 	abrupt.start()
@@ -447,19 +447,19 @@ func _test_clock_2() -> void:
 	)
 
 	# Per-choice limits: the whole point of "each game has a time limit".
-	var long_map := DotVoteChoice.of(&"epic")
+	var long_map := GSVoteChoice.of(&"epic")
 	long_map.time_limit_sec = 2400.0
 
-	var per_choice := DotVoteClock.of(_v_clock_rules)
+	var per_choice := GSVoteClock.of(_v_clock_rules)
 	per_choice.start(long_map)
 	_check(
 		is_equal_approx(per_choice.duration, 2400.0),
 		"a choice's own limit overrides the server's (%.0f)" % per_choice.duration
 	)
 
-	var unlimited := DotVoteChoice.of(&"forever")
+	var unlimited := GSVoteChoice.of(&"forever")
 	unlimited.time_limit_sec = 0.0
-	var endless := DotVoteClock.of(_v_clock_rules)
+	var endless := GSVoteClock.of(_v_clock_rules)
 	endless.start(unlimited)
 
 	for i in range(500):
@@ -485,7 +485,7 @@ func _test_clock_3() -> void:
 	round_rules.round_limit = 5
 	round_rules.vote_lead_rounds = 1
 
-	var rounds := DotVoteClock.of(round_rules)
+	var rounds := GSVoteClock.of(round_rules)
 	var round_due := []
 	rounds.vote_due.connect(func(_r: StringName) -> void: round_due.append(1))
 	rounds.start()
@@ -505,7 +505,7 @@ func _test_clock_3() -> void:
 	extend_rules.extend_seconds = 30.0
 	extend_rules.max_extends = 2
 
-	var extendable := DotVoteClock.of(extend_rules)
+	var extendable := GSVoteClock.of(extend_rules)
 	extendable.start()
 
 	for i in range(60):
@@ -537,12 +537,12 @@ func _test_rtv() -> void:
 	rules.rtv_min_players = 2
 	rules.rtv_delay_sec = 60.0
 
-	var clock := DotVoteClock.of(rules)
+	var clock := GSVoteClock.of(rules)
 	clock.start()
 
 	var early := clock.rock_the_vote(&"p1", 10)
 	_check(
-		not early.ok and early.code() == DotError.CODE_RATE_LIMITED,
+		not early.ok and early.code() == GSError.CODE_RATE_LIMITED,
 		"rocking the vote is refused for the first minute",
 		"otherwise the first thing that happens on every new map is somebody rtv-ing"
 	)
@@ -586,7 +586,7 @@ func _test_rtv_2() -> void:
 	admin_rules.rtv_delay_sec = 0.0
 	admin_rules.rtv_admin_instant = true
 
-	var admin_clock := DotVoteClock.of(admin_rules)
+	var admin_clock := GSVoteClock.of(admin_rules)
 	admin_clock.start()
 	admin_clock.rock_the_vote(&"admin", 20, true)
 	_check(admin_clock.is_expired(), "an admin can pass it alone when configured to")
@@ -596,7 +596,7 @@ func _test_rtv_2() -> void:
 	keep_rules.rtv_delay_sec = 0.0
 	keep_rules.rtv_forgets_leavers = false
 
-	var stubborn := DotVoteClock.of(keep_rules)
+	var stubborn := GSVoteClock.of(keep_rules)
 	stubborn.start()
 	stubborn.rock_the_vote(&"p1", 10)
 	stubborn.unrock(&"p1")
@@ -607,7 +607,7 @@ func _test_rtv_2() -> void:
 
 	var off := _rules()
 	off.rtv_enabled = false
-	var silent := DotVoteClock.of(off)
+	var silent := GSVoteClock.of(off)
 	silent.start()
 	_check(
 		not silent.rock_the_vote(&"p1", 10).ok,
@@ -620,7 +620,7 @@ func _test_rtv_2() -> void:
 	reset_rules.duration_sec = 600.0
 	reset_rules.rtv_delay_sec = 0.0
 
-	var reset_clock := DotVoteClock.of(reset_rules)
+	var reset_clock := GSVoteClock.of(reset_rules)
 	reset_clock.start()
 	reset_clock.rock_the_vote(&"p1", 10)
 	reset_clock.extend()

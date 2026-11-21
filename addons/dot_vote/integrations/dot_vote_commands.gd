@@ -1,7 +1,7 @@
-class_name DotVoteCommands
+class_name GSVoteCommands
 extends RefCounted
 
-## The console and chat commands, on a dot-server, in one call: [code]DotVoteCommands.install(self, director)[/code] from a DotModule's _module_loaded.
+## The console and chat commands, on a dot-server, in one call: [code]GSVoteCommands.install(self, director)[/code] from a GSModule's _module_loaded.
 ## Duck-typed so GameSpice Vote installs without GameSpice Server: the host has [code]add_command[/code] or [code]command[/code], a context has [code]reply[/code] and [code]args[/code].
 ## Every name is configurable ([member names], [member prefix]) because GameSpice Server already ships [code]vote[/code] and players of other servers type different words.
 
@@ -38,11 +38,11 @@ const ADMIN := [
 	"revote", "extend", "endvote", "setnext", "nominate_add", "forcertv", "reload",
 ]
 
-var director: DotVoteDirector = null
+var director: GSVoteDirector = null
 
 ## The map menu's server half (`mapmenu`, `sv_map_menu_flag`), installed by [method bind]
-## so every game with a vote has it. See [DotVoteMapMenu]; a game sets its `change_fn`.
-var map_menu: DotVoteMapMenu = null
+## so every game with a vote has it. See [GSVoteMapMenu]; a game sets its `change_fn`.
+var map_menu: GSVoteMapMenu = null
 
 ## Install the map menu with the rest. Off for a vote over something that is not a map (a
 ## server's next game, where M has nothing to change).
@@ -56,7 +56,7 @@ var prefix: String = ""
 var names: Dictionary = {}
 
 ## Where an operator's `commands:` block comes from: [code]() -> Dictionary[/code] with `prefix`
-## and `names`, e.g. GameSpice Map's `DotMapRotationFile.commands`. Read once by [method bind], after
+## and `names`, e.g. GameSpice Map's `GSMapRotationFile.commands`. Read once by [method bind], after
 ## the game's own settings, so the file wins. Duck-typed so this addon names no other.
 var spec_fn: Callable = Callable()
 
@@ -68,7 +68,7 @@ var chat_prefix: String = "!"
 var skipped: PackedStringArray = PackedStringArray()
 
 ## Permission an admin command needs. Empty makes them console-only.
-## `changemap` is [code]DotAdminFlags.CHANGEMAP[/code], spelled out so the file parses without GameSpice Server; [code]DotAdminFlags.granted[/code] matches the string exactly.
+## `changemap` is [code]GSAdminFlags.CHANGEMAP[/code], spelled out so the file parses without GameSpice Server; [code]GSAdminFlags.granted[/code] matches the string exactly.
 var admin_permission: String = "changemap"
 
 ## How a command context becomes a voter id; the default reads the session's userid, which GameSpice Server keys a player on.
@@ -82,8 +82,8 @@ var resolve_fn: Callable = Callable()
 var registered: PackedStringArray = PackedStringArray()
 
 
-static func install(host: Object, p_director: DotVoteDirector) -> DotVoteCommands:
-	var commands := DotVoteCommands.new()
+static func install(host: Object, p_director: GSVoteDirector) -> GSVoteCommands:
+	var commands := GSVoteCommands.new()
 	commands.director = p_director
 	commands.bind(host)
 	return commands
@@ -104,17 +104,17 @@ func describe() -> Dictionary:
 
 ## The name help and hints show for a role: the primary, prefix included.
 func command_name(role: String) -> String:
-	return DotCommandNames.all_of(prefix, names, DEFAULTS, role)[0]
+	return GSCommandNames.all_of(prefix, names, DEFAULTS, role)[0]
 
 
 ## Every name a role answers to, the primary first.
 func command_names(role: String) -> PackedStringArray:
-	return DotCommandNames.all_of(prefix, names, DEFAULTS, role)
+	return GSCommandNames.all_of(prefix, names, DEFAULTS, role)
 
 
 ## What a player types in chat for a role, e.g. [code]!game_rtv[/code].
 func typed(role: String) -> String:
-	return DotCommandNames.typed(chat_prefix, command_name(role))
+	return GSCommandNames.typed(chat_prefix, command_name(role))
 
 
 func _aliases_by_role() -> Dictionary:
@@ -127,16 +127,16 @@ func _aliases_by_role() -> Dictionary:
 
 
 ## Registers everything on [param host].
-func bind(host: Object) -> DotResult:
+func bind(host: Object) -> GSResult:
 	if host == null or director == null:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "A host and a director are both needed."
+		return GSResult.fail(
+			GSError.CODE_INVALID, "A host and a director are both needed."
 		)
 
 	if spec_fn.is_valid():
 		var from_file: Variant = spec_fn.call()
 		if from_file is Dictionary:
-			DotCommandNames.apply(self, from_file)
+			GSCommandNames.apply(self, from_file)
 
 	var adder := ""
 
@@ -145,10 +145,10 @@ func bind(host: Object) -> DotResult:
 	elif host.has_method("command"):
 		adder = "command"
 	else:
-		return DotResult.fail(
-			DotError.CODE_UNSUPPORTED,
+		return GSResult.fail(
+			GSError.CODE_UNSUPPORTED,
 			"That host has no way to register a command.",
-			"expected a DotModule (add_command) or a DotConsole (command)"
+			"expected a GSModule (add_command) or a GSConsole (command)"
 		)
 
 	var table := {
@@ -176,7 +176,7 @@ func bind(host: Object) -> DotResult:
 		var permission := admin_permission if ADMIN.has(role) else ""
 
 		for full in command_names(str(role)):
-			if not DotCommandNames.available(host, full, registered, str(role), "vote"):
+			if not GSCommandNames.available(host, full, registered, str(role), "vote"):
 				skipped.append(full)
 				continue
 
@@ -192,13 +192,13 @@ func bind(host: Object) -> DotResult:
 
 	if with_map_menu:
 		if map_menu == null:
-			map_menu = DotVoteMapMenu.new()
+			map_menu = GSVoteMapMenu.new()
 		map_menu.commands = self
 		map_menu.bind(host, adder)
 
-	DotLog.info(CHANNEL, "commands registered", {"count": registered.size()})
+	GSLog.info(CHANNEL, "commands registered", {"count": registered.size()})
 
-	return DotResult.success(registered)
+	return GSResult.success(registered)
 
 
 
@@ -234,7 +234,7 @@ func _reply(ctx: Object, text: String) -> void:
 	ctx.call("reply", text)
 
 
-func _reply_result(ctx: Object, result: DotResult, ok_text: String) -> void:
+func _reply_result(ctx: Object, result: GSResult, ok_text: String) -> void:
 	if result.ok:
 		_reply(ctx, ok_text)
 		return
@@ -375,7 +375,7 @@ func _cmd_nextmap(ctx: Object) -> void:
 ## already decided, because an admin asking for a vote has decided the last one does
 ## not stand.
 func _cmd_revote(ctx: Object) -> void:
-	var result := director.start_vote(DotVoteClock.REASON_MANUAL, true)
+	var result := director.start_vote(GSVoteClock.REASON_MANUAL, true)
 
 	_reply_result(
 		ctx, result, "Vote starting." if director.is_counting_down() else "Vote opened."

@@ -2,25 +2,25 @@ extends "res://examples/selftest/selftest_director_fill_countdown.gd"
 
 ## Selftest sections: round end triggers, ballot options, manual rtv and empty ballots.
 
-var _v_round_end_trigger_held: DotVoteDirector
-var _v_round_end_trigger_timed: DotVoteDirector
-var _v_round_end_trigger_scored: DotVoteDirector
-var _v_manual_rtv_both: DotVoteDirector
+var _v_round_end_trigger_held: GSVoteDirector
+var _v_round_end_trigger_timed: GSVoteDirector
+var _v_round_end_trigger_scored: GSVoteDirector
+var _v_manual_rtv_both: GSVoteDirector
 var _v_manual_rtv_attempts: Array
 var _v_manual_rtv_both_opened: Array
 var _v_manual_rtv_busy: Array
-var _v_manual_rtv_held: DotVoteDirector
+var _v_manual_rtv_held: GSVoteDirector
 var _v_manual_rtv_held_attempts: Array
 var _v_manual_rtv_held_opened: Array
 var _v_nothing_to_vote_for_opened: Array
-var _v_nothing_to_vote_for_rules: DotVoteRules
+var _v_nothing_to_vote_for_rules: GSVoteRules
 
 
 func _test_round_end_trigger() -> void:
 	_section("round_end holds a time or score ballot for the end of the round; time_limit does not")
 
 	var rules := _rules()
-	rules.trigger = DotVoteRules.Trigger.ROUND_END
+	rules.trigger = GSVoteRules.Trigger.ROUND_END
 	rules.duration_sec = 600.0
 	rules.round_limit = 0
 	rules.vote_lead_sec = 60.0
@@ -32,13 +32,13 @@ func _test_round_end_trigger() -> void:
 	)
 
 	var none := _rules()
-	none.trigger = DotVoteRules.Trigger.ROUND_END
+	none.trigger = GSVoteRules.Trigger.ROUND_END
 	none.duration_sec = 0.0
 	none.round_limit = 0
 	none.score_limit = 0
 	_check(not none.validate().ok, "round_end with no limit at all is still refused")
 
-	var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
+	var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
 	_v_round_end_trigger_held = _make_director(rules, source)
 	_v_round_end_trigger_held.rules.include_extend = false
 	_v_round_end_trigger_held.begin(&"a")
@@ -72,10 +72,10 @@ func _test_round_end_trigger_2() -> void:
 	# The control. The same clock under time_limit opens at the lead, mid-round — which is
 	# the difference this section exists to prove is real, and was not before.
 	var timed_rules := _rules()
-	timed_rules.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	timed_rules.trigger = GSVoteRules.Trigger.TIME_LIMIT
 	timed_rules.duration_sec = 600.0
 	timed_rules.vote_lead_sec = 60.0
-	_v_round_end_trigger_timed = _make_director(timed_rules, DotVoteListSource.of(_choices(["a", "b", "c"])))
+	_v_round_end_trigger_timed = _make_director(timed_rules, GSVoteListSource.of(_choices(["a", "b", "c"])))
 	_v_round_end_trigger_timed.rules.include_extend = false
 	_v_round_end_trigger_timed.begin(&"a")
 	_v_round_end_trigger_timed.advance(545.0)
@@ -86,11 +86,11 @@ func _test_round_end_trigger_2() -> void:
 
 	# A score limit is held the same way.
 	var scored_rules := _rules()
-	scored_rules.trigger = DotVoteRules.Trigger.ROUND_END
+	scored_rules.trigger = GSVoteRules.Trigger.ROUND_END
 	scored_rules.duration_sec = 0.0
 	scored_rules.score_limit = 20
 	scored_rules.vote_lead_score = 2
-	_v_round_end_trigger_scored = _make_director(scored_rules, DotVoteListSource.of(_choices(["a", "b"])))
+	_v_round_end_trigger_scored = _make_director(scored_rules, GSVoteListSource.of(_choices(["a", "b"])))
 	_v_round_end_trigger_scored.rules.include_extend = false
 	_v_round_end_trigger_scored.begin(&"a")
 	_v_round_end_trigger_scored.note_score(19)
@@ -107,12 +107,12 @@ func _test_round_end_trigger_2() -> void:
 func _test_round_end_trigger_3() -> void:
 	# A rock-the-vote does not wait: that is the players asking now.
 	var rocked_rules := _rules()
-	rocked_rules.trigger = DotVoteRules.Trigger.ROUND_END
+	rocked_rules.trigger = GSVoteRules.Trigger.ROUND_END
 	rocked_rules.round_limit = 5
 	rocked_rules.rtv_delay_sec = 0.0
 	rocked_rules.rtv_min_players = 1
 	rocked_rules.rtv_fraction = 0.25
-	var rocked := _make_director(rocked_rules, DotVoteListSource.of(_choices(["a", "b"])))
+	var rocked := _make_director(rocked_rules, GSVoteListSource.of(_choices(["a", "b"])))
 	rocked.begin(&"a")
 	rocked.rock_the_vote(&"p1")
 	_check(rocked.is_voting(), "a rock-the-vote under round_end opens at once")
@@ -129,22 +129,22 @@ func _test_round_end_trigger_3() -> void:
 
 	# A host that feeds neither rounds nor scores takes out what it cannot drive, rather
 	# than wait for a round end that never comes under an operator's `trigger: round_end`.
-	var unfed := DotVoteRules.new()
-	unfed.trigger = DotVoteRules.Trigger.ROUND_END
+	var unfed := GSVoteRules.new()
+	unfed.trigger = GSVoteRules.Trigger.ROUND_END
 	unfed.round_limit = 4
 	unfed.score_limit = 30
-	unfed.apply = DotVoteRules.Apply.END_OF_ROUND
-	unfed.rtv_apply = DotVoteRules.Apply.END_OF_ROUND
+	unfed.apply = GSVoteRules.Apply.END_OF_ROUND
+	unfed.rtv_apply = GSVoteRules.Apply.END_OF_ROUND
 	var dropped := unfed.drop_unfed(false, false)
 	_check(
-		unfed.trigger == DotVoteRules.Trigger.TIME_LIMIT and unfed.round_limit == 0
-			and unfed.score_limit == 0 and unfed.apply == DotVoteRules.Apply.IMMEDIATE
-			and unfed.rtv_apply == DotVoteRules.Apply.IMMEDIATE and dropped.size() == 5,
+		unfed.trigger == GSVoteRules.Trigger.TIME_LIMIT and unfed.round_limit == 0
+			and unfed.score_limit == 0 and unfed.apply == GSVoteRules.Apply.IMMEDIATE
+			and unfed.rtv_apply == GSVoteRules.Apply.IMMEDIATE and dropped.size() == 5,
 		"a host that feeds no rounds or scores drops what it cannot drive, and says what",
 		", ".join(dropped)
 	)
-	var fed := DotVoteRules.new()
-	fed.trigger = DotVoteRules.Trigger.SCORE_LIMIT
+	var fed := GSVoteRules.new()
+	fed.trigger = GSVoteRules.Trigger.SCORE_LIMIT
 	fed.score_limit = 30
 	_check(fed.drop_unfed(true, true).is_empty() and fed.score_limit == 30,
 		"and one that feeds them keeps every setting")
@@ -158,18 +158,18 @@ func _test_ballot_options() -> void:
 	rules.include_extend = false
 	rules.include_abstain = true
 
-	var ballot := DotVoteBallot.of(rules)
+	var ballot := GSVoteBallot.of(rules)
 	ballot.begin(_choices(["a", "b"]), 3)
 
-	_check(ballot.option_ids().has(DotVoteBallot.ABSTAIN), "'no vote' is on the ballot")
+	_check(ballot.option_ids().has(GSVoteBallot.ABSTAIN), "'no vote' is on the ballot")
 	_check(
-		not ballot.tally().has(DotVoteBallot.ABSTAIN),
+		not ballot.tally().has(GSVoteBallot.ABSTAIN),
 		"and is not an option anything can be counted toward"
 	)
 
-	ballot.cast_vote(&"v1", _one(DotVoteBallot.ABSTAIN))
+	ballot.cast_vote(&"v1", _one(GSVoteBallot.ABSTAIN))
 	ballot.cast_vote(&"v2", _one(&"b"))
-	ballot.cast_vote(&"v3", _one(DotVoteBallot.ABSTAIN))
+	ballot.cast_vote(&"v3", _one(GSVoteBallot.ABSTAIN))
 
 	_check(ballot.everybody_voted(), "an abstention is an answer, so the ballot can close")
 
@@ -179,41 +179,41 @@ func _test_ballot_options() -> void:
 		"one vote beats two abstentions, which are reported (%d)" % abstained.abstained
 	)
 
-	var all_out := DotVoteBallot.of(rules)
+	var all_out := GSVoteBallot.of(rules)
 	all_out.begin(_choices(["a", "b"]), 2)
-	all_out.cast_vote(&"v1", _one(DotVoteBallot.ABSTAIN))
+	all_out.cast_vote(&"v1", _one(GSVoteBallot.ABSTAIN))
 	_check(
-		all_out.resolve().outcome == DotVoteResult.Outcome.EMPTY,
+		all_out.resolve().outcome == GSVoteResult.Outcome.EMPTY,
 		"and a ballot where everybody abstained decided nothing"
 	)
 
 	var extend_rules := _rules()
-	var spent := DotVoteBallot.of(extend_rules)
+	var spent := GSVoteBallot.of(extend_rules)
 	spent.extend_available = false
 	spent.begin(_choices(["a"]), 2)
 	_check(
-		not spent.option_ids().has(DotVoteBallot.EXTEND),
+		not spent.option_ids().has(GSVoteBallot.EXTEND),
 		"'extend' is left off a ballot once the extensions are used up",
 		"an option that does nothing if it wins is not an option"
 	)
 
-	var early := DotVoteBallot.of(extend_rules)
+	var early := GSVoteBallot.of(extend_rules)
 	early.early = true
 	early.begin(_choices(["a"]), 2)
 	_check(
-		early.option_ids().has(DotVoteBallot.KEEP)
-			and not early.option_ids().has(DotVoteBallot.EXTEND),
+		early.option_ids().has(GSVoteBallot.KEEP)
+			and not early.option_ids().has(GSVoteBallot.EXTEND),
 		"a rock-the-vote ballot offers 'don't change' in place of 'extend'"
 	)
 
 	var no_keep := _rules()
 	no_keep.early_vote_keep = false
-	var early_extend := DotVoteBallot.of(no_keep)
+	var early_extend := GSVoteBallot.of(no_keep)
 	early_extend.early = true
 	early_extend.begin(_choices(["a"]), 2)
 	_check(
-		early_extend.option_ids().has(DotVoteBallot.EXTEND)
-			and not early_extend.option_ids().has(DotVoteBallot.KEEP),
+		early_extend.option_ids().has(GSVoteBallot.EXTEND)
+			and not early_extend.option_ids().has(GSVoteBallot.KEEP),
 		"unless the server says otherwise"
 	)
 
@@ -225,14 +225,14 @@ func _test_ballot_options_2() -> void:
 	first_rules.include_extend = false
 	first_rules.include_keep = true
 	first_rules.pseudo_options_first = true
-	first_rules.tie_break = DotVoteRules.TieBreak.BALLOT_ORDER
+	first_rules.tie_break = GSVoteRules.TieBreak.BALLOT_ORDER
 
-	var first := DotVoteBallot.of(first_rules)
+	var first := GSVoteBallot.of(first_rules)
 	first.begin(_choices(["a", "b"]), 2)
-	_check(first.option_ids()[0] == DotVoteBallot.KEEP, "'don't change' can be listed first")
+	_check(first.option_ids()[0] == GSVoteBallot.KEEP, "'don't change' can be listed first")
 
 	first.cast_vote(&"v1", _one(&"a"))
-	first.cast_vote(&"v2", _one(DotVoteBallot.KEEP))
+	first.cast_vote(&"v2", _one(GSVoteBallot.KEEP))
 	_check(
 		first.resolve().winner_id == &"a",
 		"and still loses a tie a choice listed after it",
@@ -241,11 +241,11 @@ func _test_ballot_options_2() -> void:
 
 	var cut_rules := _rules()
 	cut_rules.include_extend = false
-	cut_rules.method = DotVoteRules.Method.MAJORITY_RUNOFF
+	cut_rules.method = GSVoteRules.Method.MAJORITY_RUNOFF
 	cut_rules.runoff_options = 2
 	cut_rules.max_runoffs = 1
 
-	var cut := DotVoteBallot.of(cut_rules)
+	var cut := GSVoteBallot.of(cut_rules)
 	cut.begin(_choices(["a", "b", "c", "d"]), 7)
 	for pair: Array in [["v1", "a"], ["v2", "a"], ["v3", "b"], ["v4", "b"],
 			["v5", "c"], ["v6", "c"], ["v7", "d"]]:
@@ -253,16 +253,16 @@ func _test_ballot_options_2() -> void:
 
 	var three_way := cut.resolve()
 	_check(
-		three_way.outcome == DotVoteResult.Outcome.RUNOFF and three_way.runoff_ids.size() == 3,
+		three_way.outcome == GSVoteResult.Outcome.RUNOFF and three_way.runoff_ids.size() == 3,
 		"three tied at the runoff line all go through, not two of them (%d)"
 			% three_way.runoff_ids.size(),
 		"cutting a tie by menu position drops an option for being lower on a list"
 	)
 
-	var low_rules := cut_rules.duplicate() as DotVoteRules
+	var low_rules := cut_rules.duplicate() as GSVoteRules
 	low_rules.majority_fraction = 0.4
 
-	var low := DotVoteBallot.of(low_rules)
+	var low := GSVoteBallot.of(low_rules)
 	low.begin(_choices(["a", "b", "c"]), 7)
 	for pair: Array in [["v1", "a"], ["v2", "a"], ["v3", "a"], ["v4", "b"],
 			["v5", "b"], ["v6", "c"], ["v7", "c"]]:
@@ -280,17 +280,17 @@ func _test_ballot_options_3() -> void:
 	# Shuffled, and reproducibly so.
 	var shuffle_a := _rules()
 	shuffle_a.shuffle_ballot = true
-	shuffle_a.fill = DotVoteRules.Fill.SEQUENTIAL
+	shuffle_a.fill = GSVoteRules.Fill.SEQUENTIAL
 	shuffle_a.include_extend = false
 	shuffle_a.max_options = 6
 	shuffle_a.nomination_slots = 0
 	shuffle_a.cooldown = 0
 	shuffle_a.fill_seed = 99
 
-	var shuffle_b := shuffle_a.duplicate() as DotVoteRules
+	var shuffle_b := shuffle_a.duplicate() as GSVoteRules
 
-	var left := _make_director(shuffle_a, DotVoteListSource.of(_choices(["a", "b", "c", "d", "e", "f"])))
-	var right := _make_director(shuffle_b, DotVoteListSource.of(_choices(["a", "b", "c", "d", "e", "f"])))
+	var left := _make_director(shuffle_a, GSVoteListSource.of(_choices(["a", "b", "c", "d", "e", "f"])))
+	var right := _make_director(shuffle_b, GSVoteListSource.of(_choices(["a", "b", "c", "d", "e", "f"])))
 	left.begin(&"")
 	right.begin(&"")
 	left.open_vote()
@@ -311,9 +311,9 @@ func _test_ballot_options_3() -> void:
 	)
 
 	# Custom maps are marked where the players see them.
-	var custom := DotVoteChoice.of(&"surf_new", "Surf New")
+	var custom := GSVoteChoice.of(&"surf_new", "Surf New")
 	custom.official = false
-	var marked_source := DotVoteListSource.of([custom, DotVoteChoice.of(&"shipped", "Shipped")] as Array[DotVoteChoice])
+	var marked_source := GSVoteListSource.of([custom, GSVoteChoice.of(&"shipped", "Shipped")] as Array[GSVoteChoice])
 	var marked_rules := _rules()
 	marked_rules.include_extend = false
 	marked_rules.cooldown = 0
@@ -347,7 +347,7 @@ func _test_manual_rtv() -> void:
 	# The rocked ballot opens with nobody else asking for it.
 	var applied := []
 	var rules := _rules()
-	rules.trigger = DotVoteRules.Trigger.MANUAL
+	rules.trigger = GSVoteRules.Trigger.MANUAL
 	var director := _rtv_director(rules, applied)
 	var opened := []
 	director.vote_opened.connect(func(_o: Array, _s: float) -> void: opened.append(true))
@@ -377,7 +377,7 @@ func _test_manual_rtv() -> void:
 		lead.clock.is_expired() and lead_opened.is_empty() and not lead.is_voting(),
 		"while the limit reaching its lead, and running out, opens nothing under MANUAL"
 	)
-	_check(lead.start_vote(DotVoteClock.REASON_MANUAL).ok and lead.is_voting(), "until the host asks")
+	_check(lead.start_vote(GSVoteClock.REASON_MANUAL).ok and lead.is_voting(), "until the host asks")
 
 	# A game that still opens the rocked ballot itself does not get a second one.
 	_v_manual_rtv_both = _rtv_director(_manual_rules(), [])
@@ -419,7 +419,7 @@ func _test_manual_rtv_2() -> void:
 
 	_check(
 		countdowns.size() == 1 and warned_attempts.size() == 1
-			and not (warned_attempts[0] as DotResult).ok,
+			and not (warned_attempts[0] as GSResult).ok,
 		"with a countdown: one countdown, and the game's start_vote is refused"
 	)
 
@@ -465,12 +465,12 @@ func _test_manual_rtv_3() -> void:
 	_check(forced.is_voting(), "an admin's force_rtv still opens one under MANUAL")
 
 	# Every other trigger: a rocked ballot opens as before, and the lead does what it did.
-	for trigger: DotVoteRules.Trigger in [
-		DotVoteRules.Trigger.TIME_LIMIT,
-		DotVoteRules.Trigger.ROUND_END,
-		DotVoteRules.Trigger.RTV_ONLY,
+	for trigger: GSVoteRules.Trigger in [
+		GSVoteRules.Trigger.TIME_LIMIT,
+		GSVoteRules.Trigger.ROUND_END,
+		GSVoteRules.Trigger.RTV_ONLY,
 	]:
-		var trig_name: String = DotVoteRules.Trigger.keys()[trigger]
+		var trig_name: String = GSVoteRules.Trigger.keys()[trigger]
 		var trig_rules := _rules()
 		trig_rules.trigger = trigger
 		var rocked := _rtv_director(trig_rules, [])
@@ -490,7 +490,7 @@ func _test_manual_rtv_3() -> void:
 		for i in range(91):
 			timed.advance(1.0)
 
-		var expected := trigger == DotVoteRules.Trigger.TIME_LIMIT
+		var expected := trigger == GSVoteRules.Trigger.TIME_LIMIT
 		_check(
 			timed.is_voting() == expected,
 			"%s: the limit's lead %s" % [trig_name, "opens the ballot" if expected else "does not open it mid-round"]
@@ -509,7 +509,7 @@ func _test_nothing_to_vote_for() -> void:
 	_v_nothing_to_vote_for_rules.include_extend = true
 
 	# The only choice is the one running: a ballot could only be Extend.
-	var lonely := _make_director(_v_nothing_to_vote_for_rules, DotVoteListSource.of(_choices(["solo"])))
+	var lonely := _make_director(_v_nothing_to_vote_for_rules, GSVoteListSource.of(_choices(["solo"])))
 	lonely.vote_opened.connect(func(_o: Array, _s: float) -> void: _v_nothing_to_vote_for_opened[0] += 1)
 	lonely.begin(&"solo")
 
@@ -524,7 +524,7 @@ func _test_nothing_to_vote_for() -> void:
 	)
 	_check(lonely.can_start_vote(), "with no retry left owing")
 	_check(
-		not lonely.start_vote(DotVoteClock.REASON_MANUAL).ok,
+		not lonely.start_vote(GSVoteClock.REASON_MANUAL).ok,
 		"and an admin asking for a vote is told there is nothing to vote for"
 	)
 	lonely.queue_free()
@@ -533,9 +533,9 @@ func _test_nothing_to_vote_for() -> void:
 	var twice := _choices(["airdrift", "owner_airdrift", "fc"])
 	twice[0].display_name = "airdrift"
 	twice[1].display_name = "Airdrift"
-	var named := _make_director(_v_nothing_to_vote_for_rules, DotVoteListSource.of(twice))
+	var named := _make_director(_v_nothing_to_vote_for_rules, GSVoteListSource.of(twice))
 	named.begin(&"airdrift")
-	var offered := named.build_options(4).map(func(c: DotVoteChoice) -> StringName: return c.id)
+	var offered := named.build_options(4).map(func(c: GSVoteChoice) -> StringName: return c.id)
 	_check(
 		offered == [&"fc"],
 		"a choice named like the running one is not offered as another (%s)" % str(offered)
@@ -550,7 +550,7 @@ func _test_nothing_to_vote_for_2() -> void:
 	only_twice[0].display_name = "airdrift"
 	only_twice[1].display_name = "airdrift "
 	_v_nothing_to_vote_for_opened[0] = 0
-	var dup := _make_director(_v_nothing_to_vote_for_rules, DotVoteListSource.of(only_twice))
+	var dup := _make_director(_v_nothing_to_vote_for_rules, GSVoteListSource.of(only_twice))
 	dup.vote_opened.connect(func(_o: Array, _s: float) -> void: _v_nothing_to_vote_for_opened[0] += 1)
 	dup.begin(&"airdrift")
 
@@ -559,10 +559,10 @@ func _test_nothing_to_vote_for_2() -> void:
 
 	_check(_v_nothing_to_vote_for_opened[0] == 0, "so a second install of the only game opens no ballot either")
 
-	var included := _v_nothing_to_vote_for_rules.duplicate() as DotVoteRules
+	var included := _v_nothing_to_vote_for_rules.duplicate() as GSVoteRules
 	included.include_current = true
 	dup.rules = included
-	var back := dup.build_options(4).map(func(c: DotVoteChoice) -> StringName: return c.id)
+	var back := dup.build_options(4).map(func(c: GSVoteChoice) -> StringName: return c.id)
 	_check(
 		back.has(&"owner_airdrift"),
 		"unless include_current asks for what is running (%s)" % str(back)
@@ -570,14 +570,14 @@ func _test_nothing_to_vote_for_2() -> void:
 	dup.queue_free()
 
 	# The last alternative goes during the countdown: the ballot is not opened over Extend.
-	var warned := _v_nothing_to_vote_for_rules.duplicate() as DotVoteRules
+	var warned := _v_nothing_to_vote_for_rules.duplicate() as GSVoteRules
 	warned.vote_warning_sec = 5.0
 	var pair := _choices(["a", "b"])
 	_v_nothing_to_vote_for_opened[0] = 0
-	var racing := _make_director(warned, DotVoteListSource.of(pair))
+	var racing := _make_director(warned, GSVoteListSource.of(pair))
 	racing.vote_opened.connect(func(_o: Array, _s: float) -> void: _v_nothing_to_vote_for_opened[0] += 1)
 	racing.begin(&"a")
-	_check(racing.start_vote(DotVoteClock.REASON_MANUAL).ok, "with two choices the countdown starts")
+	_check(racing.start_vote(GSVoteClock.REASON_MANUAL).ok, "with two choices the countdown starts")
 	pair[1].min_players = 10
 
 	for i in range(6):

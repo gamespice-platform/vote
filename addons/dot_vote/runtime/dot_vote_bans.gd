@@ -1,4 +1,4 @@
-class_name DotVoteBans
+class_name GSVoteBans
 extends RefCounted
 
 ## A vote to ban one player: yes or no, one at a time, enabled per server and per role.
@@ -17,7 +17,7 @@ signal cast(voter: StringName, yes: bool)
 signal passed(target: StringName, minutes: float, reason: String)
 signal failed(target: StringName, why: String)
 
-var rules: DotVoteBanRules = DotVoteBanRules.new()
+var rules: GSVoteBanRules = GSVoteBanRules.new()
 
 ## () -> Array of the ids of everybody who may vote (every human playing).
 var voters_fn: Callable = Callable()
@@ -65,33 +65,33 @@ func command_name(role: String) -> String:
 
 
 ## Opens a vote to ban [param target]. [param starter] is [constant GAME] for the game's own.
-## A [DotResult] so a refusal says why (CODE_FORBIDDEN, CODE_STATE, CODE_INVALID, CODE_STATE).
-func start(starter: StringName, target_id: StringName, reason: String = "") -> DotResult:
+## A [GSResult] so a refusal says why (CODE_FORBIDDEN, CODE_STATE, CODE_INVALID, CODE_STATE).
+func start(starter: StringName, target_id: StringName, reason: String = "") -> GSResult:
 	rules.refresh()
 	if not rules.enabled:
-		return DotResult.fail(DotError.CODE_STATE, "Votebans are off on this server.")
+		return GSResult.fail(GSError.CODE_STATE, "Votebans are off on this server.")
 	if _open:
-		return DotResult.fail(DotError.CODE_STATE, "A voteban is already open.")
+		return GSResult.fail(GSError.CODE_STATE, "A voteban is already open.")
 	if target_id == &"" or target_id == starter:
-		return DotResult.fail(DotError.CODE_INVALID, "Name another player to vote against.")
+		return GSResult.fail(GSError.CODE_INVALID, "Name another player to vote against.")
 	if starter != GAME and not rules.may_start(_role(starter)):
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "You may not start a voteban here.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "You may not start a voteban here.")
 	if rules.is_immune(_role(target_id)):
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "%s cannot be voted against." % _name(target_id))
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "%s cannot be voted against." % _name(target_id))
 	var now := _clock()
 	if starter != GAME and _last_by.has(starter) and now - float(_last_by[starter]) < rules.cooldown_sec:
-		return DotResult.fail(DotError.CODE_RATE_LIMITED, "Wait %d s before starting another." % ceili(rules.cooldown_sec - (now - float(_last_by[starter]))))
+		return GSResult.fail(GSError.CODE_RATE_LIMITED, "Wait %d s before starting another." % ceili(rules.cooldown_sec - (now - float(_last_by[starter]))))
 	if _last_on.has(target_id) and now - float(_last_on[target_id]) < rules.cooldown_sec:
-		return DotResult.fail(DotError.CODE_RATE_LIMITED, "%s was voted on a moment ago." % _name(target_id))
+		return GSResult.fail(GSError.CODE_RATE_LIMITED, "%s was voted on a moment ago." % _name(target_id))
 	var eligible: Array = []
 	if voters_fn.is_valid():
 		for id: Variant in voters_fn.call():
 			if StringName(str(id)) != target_id:
 				eligible.append(StringName(str(id)))
 	if eligible.size() < rules.min_voters:
-		return DotResult.fail(DotError.CODE_STATE, "Needs at least %d other players." % rules.min_voters)
+		return GSResult.fail(GSError.CODE_STATE, "Needs at least %d other players." % rules.min_voters)
 	if starter != GAME and not (starter in eligible):
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "Only players here may start a voteban.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "Only players here may start a voteban.")
 
 	_open = true
 	_target = target_id
@@ -105,21 +105,21 @@ func start(starter: StringName, target_id: StringName, reason: String = "") -> D
 	if starter != GAME:
 		_last_by[starter] = now
 		_yes[starter] = true
-	DotLog.info(CHANNEL, "voteban opened", {"target": String(target_id), "starter": String(starter), "reason": reason})
+	GSLog.info(CHANNEL, "voteban opened", {"target": String(target_id), "starter": String(starter), "reason": reason})
 	started.emit(target_id, starter, reason)
 	_say("%s started a vote to ban %s%s. %s to vote." % [
 		_name(starter) if starter != GAME else "The game", _name(target_id),
 		(" (" + reason + ")") if reason != "" else "", "%s / %s" % [command_name("yes"), command_name("no")]])
 	_settle()
-	return DotResult.success(target_id)
+	return GSResult.success(target_id)
 
 
 ## One yes or no from [param voter]; changing your mind is allowed.
-func vote(voter: StringName, yes: bool) -> DotResult:
+func vote(voter: StringName, yes: bool) -> GSResult:
 	if not _open:
-		return DotResult.fail(DotError.CODE_STATE, "No voteban is open.")
+		return GSResult.fail(GSError.CODE_STATE, "No voteban is open.")
 	if not (voter in _eligible):
-		return DotResult.fail(DotError.CODE_FORBIDDEN, "You cannot vote on this one.")
+		return GSResult.fail(GSError.CODE_FORBIDDEN, "You cannot vote on this one.")
 	_yes.erase(voter)
 	_no.erase(voter)
 	if yes:
@@ -128,7 +128,7 @@ func vote(voter: StringName, yes: bool) -> DotResult:
 		_no[voter] = true
 	cast.emit(voter, yes)
 	_settle()
-	return DotResult.success(yes)
+	return GSResult.success(yes)
 
 
 ## A voter who left: they no longer count in the electorate.
@@ -180,13 +180,13 @@ func _finish(pass_it: bool, why: String) -> void:
 	_last_on[who] = _clock()
 	if pass_it:
 		var minutes := rules.ban_minutes
-		DotLog.info(CHANNEL, "voteban passed", {"target": String(who), "minutes": minutes, "yes": _yes.size(), "of": _eligible.size()})
+		GSLog.info(CHANNEL, "voteban passed", {"target": String(who), "minutes": minutes, "yes": _yes.size(), "of": _eligible.size()})
 		_say("The vote passed: %s is banned%s." % [_name(who), (" for %d minutes" % int(minutes)) if minutes > 0.0 else ""])
 		passed.emit(who, minutes, reason)
 		if ban_fn.is_valid():
 			ban_fn.call(who, minutes, "Voted off: " + (reason if reason != "" else "voteban"))
 	else:
-		DotLog.info(CHANNEL, "voteban failed", {"target": String(who), "why": why})
+		GSLog.info(CHANNEL, "voteban failed", {"target": String(who), "why": why})
 		_say("The vote to ban %s failed." % _name(who))
 		failed.emit(who, why)
 
@@ -215,14 +215,14 @@ func describe() -> Dictionary:
 
 
 ## Registers `voteban <player> [reason]`, `voteban_yes` and `voteban_no` (typable in chat),
-## and the cvars. [param host] is a DotModule (add_command) or console (command).
-func bind_commands(host: Object) -> DotResult:
+## and the cvars. [param host] is a GSModule (add_command) or console (command).
+func bind_commands(host: Object) -> GSResult:
 	if host == null:
-		return DotResult.fail(DotError.CODE_INVALID, "A host is needed.")
+		return GSResult.fail(GSError.CODE_INVALID, "A host is needed.")
 	rules.bind(host)
 	var adder := "add_command" if host.has_method("add_command") else ("command" if host.has_method("command") else "")
 	if adder == "":
-		return DotResult.fail(DotError.CODE_INVALID, "The host has no add_command or command.")
+		return GSResult.fail(GSError.CODE_INVALID, "The host has no add_command or command.")
 	var table := [
 		["voteban", _cmd_start, "Start a vote to ban a player: voteban <player> [reason]"],
 		["yes", _cmd_yes, "Vote yes on the open voteban"],
@@ -232,7 +232,7 @@ func bind_commands(host: Object) -> DotResult:
 		var registered: Variant = host.call(adder, command_name(entry[0]), entry[1], entry[2], "")
 		if registered is Object and (registered as Object).has_method("with_chat"):
 			(registered as Object).call("with_chat")
-	return DotResult.success(true)
+	return GSResult.success(true)
 
 
 func _voter(ctx: Object) -> StringName:
@@ -244,7 +244,7 @@ func _voter(ctx: Object) -> StringName:
 	return &"console"
 
 
-func _reply(ctx: Object, result: DotResult, ok_text: String) -> void:
+func _reply(ctx: Object, result: GSResult, ok_text: String) -> void:
 	ctx.call("reply", ok_text if result.ok else result.error.message)
 
 

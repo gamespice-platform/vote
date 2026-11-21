@@ -13,12 +13,12 @@ extends "res://examples/selftest/selftest_time_up_and_ballot_view.gd"
 ## "every setting is read by something" is a mechanical detector for this family's most
 ## repeated bug — an exported setting whose name occurs exactly once in its repository
 ## is a setting nothing reads, and one grep over the other addons found twenty-six of
-## them. [DotVoteRules] declares eighty settings in one resource, which is
+## them. [GSVoteRules] declares eighty settings in one resource, which is
 ## either the addon's best feature or twenty-six of that bug in a new repository. The
 ## check is the difference.
 ##
-## The two integration sections run this addon against a real [code]DotGameManager[/code]
-## and a real [code]DotMapCatalogue[/code], because "the two ends have never met" is how
+## The two integration sections run this addon against a real [code]GSGameManager[/code]
+## and a real [code]GSMapCatalogue[/code], because "the two ends have never met" is how
 ## every expensive bug in this family has started: GameSpice Map calling `ensure` on a client
 ## that offered `acquire`, the leaderboard reporter sending its file format as the wire,
 ## four call sites finding a null cloud client and none of them erroring. A vote that
@@ -28,9 +28,9 @@ const CHECKS := 607
 
 
 func _ready() -> void:
-	DotLog.set_level(
-		DotLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args()
-		else DotLog.Level.ERROR
+	GSLog.set_level(
+		GSLog.Level.DEBUG if "--verbose" in OS.get_cmdline_user_args()
+		else GSLog.Level.ERROR
 	)
 	_run.call_deferred()
 
@@ -38,7 +38,7 @@ func _ready() -> void:
 func _run() -> void:
 	print("dot-vote self-test")
 
-	DotPaths.remove_tree(DATA)
+	GSPaths.remove_tree(DATA)
 
 	_test_choices()
 	_test_rules_layering()
@@ -84,7 +84,7 @@ func _run() -> void:
 	_test_describe()
 	_test_votebans()
 
-	DotPaths.remove_tree(DATA)
+	GSPaths.remove_tree(DATA)
 
 	print("")
 	_check(

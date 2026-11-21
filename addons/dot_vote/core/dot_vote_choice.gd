@@ -1,9 +1,9 @@
 @tool
-class_name DotVoteChoice
+class_name GSVoteChoice
 extends Resource
 
 ## One thing that can be voted for: a game, a map, a mode, a mutator.
-## Deliberately an id, a name and the facts a ballot needs, not a game or a map; what the id means is a [DotVoteSource]'s business.
+## Deliberately an id, a name and the facts a ballot needs, not a game or a map; what the id means is a [GSVoteSource]'s business.
 ## That is how one vote system drives GameSpice Server's game list and GameSpice Map's catalogue without naming either.
 
 ## Id, unique within a source; history, cooldowns and per-choice configuration are keyed on it, so never rename it.
@@ -45,20 +45,20 @@ extends Resource
 
 @export_group("Duration")
 
-## Seconds this choice runs for, overriding [member DotVoteRules.duration_sec].
+## Seconds this choice runs for, overriding [member GSVoteRules.duration_sec].
 ## Negative means "use the rules"; zero is a real setting (no limit, ends only by vote).
 @export_range(-1.0, 21600.0, 1.0) var time_limit_sec: float = -1.0
 
-## Rounds this choice runs for, overriding [member DotVoteRules.round_limit]; negative uses the rules.
+## Rounds this choice runs for, overriding [member GSVoteRules.round_limit]; negative uses the rules.
 ## Whichever of rounds and seconds arrives first ends it.
 @export_range(-1, 512, 1) var round_limit: int = -1
 
 @export_group("Selection")
 
-## Relative likelihood under [constant DotVoteRules.Fill.WEIGHTED]. 0 excludes it.
+## Relative likelihood under [constant GSVoteRules.Fill.WEIGHTED]. 0 excludes it.
 @export_range(0.0, 100.0, 0.1) var weight: float = 1.0
 
-## Plays this choice is excluded for after being played; negative uses [member DotVoteRules.cooldown].
+## Plays this choice is excluded for after being played; negative uses [member GSVoteRules.cooldown].
 @export_range(-1, 64, 1) var cooldown_override: int = -1
 
 @export_group("Metadata")
@@ -68,8 +68,8 @@ extends Resource
 @export var meta: Dictionary = {}
 
 
-static func of(p_id: StringName, p_display: String = "") -> DotVoteChoice:
-	var choice := DotVoteChoice.new()
+static func of(p_id: StringName, p_display: String = "") -> GSVoteChoice:
+	var choice := GSVoteChoice.new()
 	choice.id = p_id
 	choice.display_name = p_display
 	return choice
@@ -143,8 +143,8 @@ func to_dictionary() -> Dictionary:
 	}
 
 
-static func from_dictionary(data: Dictionary) -> DotVoteChoice:
-	var choice := DotVoteChoice.new()
+static func from_dictionary(data: Dictionary) -> GSVoteChoice:
+	var choice := GSVoteChoice.new()
 
 	choice.id = StringName(str(data.get("id", "")))
 	choice.display_name = str(data.get("display_name", data.get("name", "")))
@@ -178,4 +178,4 @@ func describe() -> Dictionary:
 
 
 func _to_string() -> String:
-	return "DotVoteChoice(%s)" % id
+	return "GSVoteChoice(%s)" % id

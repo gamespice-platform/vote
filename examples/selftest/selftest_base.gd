@@ -12,7 +12,7 @@ var _completed := 0
 
 
 func _ban_rig(count: int) -> Array:
-	var bans := DotVoteBans.new()
+	var bans := GSVoteBans.new()
 	var banned: Array = []
 	var told: Array = []
 	var ids: Array = []
@@ -32,7 +32,7 @@ class _ArgvConsole extends RefCounted:
 
 
 ## A source with a reason for what it does not offer, as a game's would be.
-class _ReasonSource extends DotVoteListSource:
+class _ReasonSource extends GSVoteListSource:
 	func unavailable_reason(id: StringName) -> String:
 		return "%s cannot run here." % id
 
@@ -59,8 +59,8 @@ func _check(condition: bool, what: String, detail: String = "") -> bool:
 	return false
 
 
-func _rules() -> DotVoteRules:
-	var rules := DotVoteRules.new()
+func _rules() -> GSVoteRules:
+	var rules := GSVoteRules.new()
 	# The suite drives every clock by hand, so nothing here should also be waiting on
 	# a real one. Everything else stays at its shipped default deliberately: a suite
 	# that configures its way around the defaults is a suite that never tests them.
@@ -68,11 +68,11 @@ func _rules() -> DotVoteRules:
 	return rules
 
 
-func _choices(ids: Array) -> Array[DotVoteChoice]:
-	var out: Array[DotVoteChoice] = []
+func _choices(ids: Array) -> Array[GSVoteChoice]:
+	var out: Array[GSVoteChoice] = []
 
 	for id: Variant in ids:
-		out.append(DotVoteChoice.of(StringName(str(id)), str(id).capitalize()))
+		out.append(GSVoteChoice.of(StringName(str(id)), str(id).capitalize()))
 
 	return out
 
@@ -88,8 +88,8 @@ func _write_text(path: String, text: String) -> void:
 	f.close()
 
 
-func _make_director(rules: DotVoteRules, source: DotVoteSource) -> DotVoteDirector:
-	var director := DotVoteDirector.new()
+func _make_director(rules: GSVoteRules, source: GSVoteSource) -> GSVoteDirector:
+	var director := GSVoteDirector.new()
 	director.rules = rules
 	director.source = source
 	# Off, because several directors exist at once in this suite and the registry
@@ -100,11 +100,11 @@ func _make_director(rules: DotVoteRules, source: DotVoteSource) -> DotVoteDirect
 	return director
 
 
-func _rtv_director(rules: DotVoteRules, applied: Array) -> DotVoteDirector:
-	var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
-	source.apply_fn = func(id: StringName) -> DotResult:
+func _rtv_director(rules: GSVoteRules, applied: Array) -> GSVoteDirector:
+	var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	rules.duration_sec = 100.0
 	rules.vote_lead_sec = 10.0
@@ -123,23 +123,23 @@ func _rtv_director(rules: DotVoteRules, applied: Array) -> DotVoteDirector:
 
 
 ## What every MANUAL game did by hand until GameSpice Vote opened a rocked ballot itself:
-func _game_rtv_workaround(director: DotVoteDirector, attempts: Array) -> void:
+func _game_rtv_workaround(director: GSVoteDirector, attempts: Array) -> void:
 	director.clock.expired.connect(func(reason: StringName) -> void:
-		if reason != DotVoteClock.REASON_RTV or director.is_voting():
+		if reason != GSVoteClock.REASON_RTV or director.is_voting():
 			return
 
-		attempts.append(director.start_vote(DotVoteClock.REASON_RTV))
+		attempts.append(director.start_vote(GSVoteClock.REASON_RTV))
 	)
 
 
-func _manual_rules() -> DotVoteRules:
+func _manual_rules() -> GSVoteRules:
 	var rules := _rules()
-	rules.trigger = DotVoteRules.Trigger.MANUAL
+	rules.trigger = GSVoteRules.Trigger.MANUAL
 	return rules
 
 
-## Stands in for a GameSpice Server [code]DotServer[/code]: the one signal and the one question
-## [method DotVoteDirector.follow_hibernation] duck-types. The real one is followed in the
+## Stands in for a GameSpice Server [code]GSServer[/code]: the one signal and the one question
+## [method GSVoteDirector.follow_hibernation] duck-types. The real one is followed in the
 ## real game manager's section.
 class FakeHibernatingServer extends Node:
 	signal hibernation_changed(hibernating: bool)
@@ -154,8 +154,8 @@ class FakeHibernatingServer extends Node:
 		hibernation_changed.emit(on)
 
 
-func _history_after_one_play(rules: DotVoteRules, id: StringName) -> Dictionary:
-	var history := DotVoteHistory.of(rules)
+func _history_after_one_play(rules: GSVoteRules, id: StringName) -> Dictionary:
+	var history := GSVoteHistory.of(rules)
 	history.note_played(id)
 	return history.describe()
 
@@ -163,13 +163,13 @@ func _history_after_one_play(rules: DotVoteRules, id: StringName) -> Dictionary:
 ## A director on a server nobody is on, whose clock runs out. [param seed_value] seeds its
 ## draw; returns what it changed to.
 func _empty_run(
-	choice: DotVoteRules.EmptyChoice, ids: Array, seed_value: int, include_current: bool = false
+	choice: GSVoteRules.EmptyChoice, ids: Array, seed_value: int, include_current: bool = false
 ) -> Array:
 	var applied := []
-	var source := DotVoteListSource.of(_choices(ids))
-	source.apply_fn = func(id: StringName) -> DotResult:
+	var source := GSVoteListSource.of(_choices(ids))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	var rules := _rules()
 	rules.duration_sec = 100.0
@@ -197,19 +197,19 @@ func _empty_run(
 
 ## A director whose clock runs out with a winner already decided, for the time_up checks.
 func _time_up_director(
-	time_up: DotVoteRules.TimeUp, round_based: bool, applied: Array, max_wait: float = 0.0
-) -> DotVoteDirector:
-	var source := DotVoteListSource.of(_choices(["a", "b"]))
-	source.apply_fn = func(id: StringName) -> DotResult:
+	time_up: GSVoteRules.TimeUp, round_based: bool, applied: Array, max_wait: float = 0.0
+) -> GSVoteDirector:
+	var source := GSVoteListSource.of(_choices(["a", "b"]))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	var rules := _rules()
 	rules.duration_sec = 100.0
 	rules.vote_lead_sec = 40.0
 	rules.vote_duration_sec = 5.0
 	rules.include_extend = false
-	rules.apply = DotVoteRules.Apply.END_OF_TIME
+	rules.apply = GSVoteRules.Apply.END_OF_TIME
 	rules.cooldown = 0
 	rules.time_up = time_up
 	rules.finish_round_max_sec = max_wait

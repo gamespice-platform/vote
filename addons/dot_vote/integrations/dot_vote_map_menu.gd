@@ -1,15 +1,15 @@
-class_name DotVoteMapMenu
+class_name GSVoteMapMenu
 extends RefCounted
 
-## The server half of the map menu every game has on M: `mapmenu` lists the maps, and `mapmenu <id>` changes to one for a holder of the owner's flag or starts a vote for anybody else. Installed by DotVoteCommands.bind; a game sets only [code]change_fn[/code] and optionally [code]rows_fn[/code].
+## The server half of the map menu every game has on M: `mapmenu` lists the maps, and `mapmenu <id>` changes to one for a holder of the owner's flag or starts a vote for anybody else. Installed by GSVoteCommands.bind; a game sets only [code]change_fn[/code] and optionally [code]rows_fn[/code].
 ## The flag is `sv_map_menu_flag` (default `generic`, `changemap` for admins, `anyone` for open servers), read on every request. It fails closed: an empty or unregistered value means staff only, never anybody. Others nominate and rock the vote only with `sv_map_menu_vote_min` humans (2, never fewer) and never on less than a majority of them. `sv_map_menu_alone` (1): the only human changes it directly.
-## A session with no transport ([code]DotClientSession.local[/code]) is the listen host and always has the change; "from 127.0.0.1" is wrong behind a TLS proxy. Answers are `map_menu` notices plus a reply line, so older clients still read the result.
+## A session with no transport ([code]GSClientSession.local[/code]) is the listen host and always has the change; "from 127.0.0.1" is wrong behind a TLS proxy. Answers are `map_menu` notices plus a reply line, so older clients still read the result.
 
 const CHANNEL := "vote.map_menu"
 
 const TOPIC := &"map_menu"
 const FLAG_CVAR := "sv_map_menu_flag"
-## GameSpice Server's `DotAdminFlags.GENERIC`, spelled out (see [DotVoteCommands.admin_permission]).
+## GameSpice Server's `GSAdminFlags.GENERIC`, spelled out (see [GSVoteCommands.admin_permission]).
 const DEFAULT_FLAG := "generic"
 ## The value of `sv_map_menu_flag` that lets everybody change the map directly.
 const ANYONE := "anyone"
@@ -32,11 +32,11 @@ const PART_BYTES := 6500
 
 const NOTICE_SCRIPT := "res://addons/dot_server/net/dot_notice.gd"
 
-## The commands this belongs to, held weakly: they hold this ([member DotVoteCommands.map_menu]),
+## The commands this belongs to, held weakly: they hold this ([member GSVoteCommands.map_menu]),
 ## and two RefCounted holding each other are never freed.
-var commands: DotVoteCommands:
+var commands: GSVoteCommands:
 	get:
-		return _commands.get_ref() as DotVoteCommands if _commands != null else null
+		return _commands.get_ref() as GSVoteCommands if _commands != null else null
 	set(value):
 		_commands = weakref(value) if value != null else null
 var _commands: WeakRef = null
@@ -60,11 +60,11 @@ var vote_min_cvar: Object = null
 ## better answer sets it; it must never count a bot.
 var humans_fn: Callable = Callable()
 
-## `func(id: StringName) -> DotResult` (may await): change to [param id] now. Unset is the
+## `func(id: StringName) -> GSResult` (may await): change to [param id] now. Unset is the
 ## source's own apply, which in a round-based game is often "next round".
 var change_fn: Callable = Callable()
 
-## Applies a mode picked with the map, `(id: StringName, mode: StringName) -> DotResult`, before an outright change; unset, the mode is ignored. A vote cannot carry one.
+## Applies a mode picked with the map, `(id: StringName, mode: StringName) -> GSResult`, before an outright change; unset, the mode is ignored. A vote cannot carry one.
 var mode_fn: Callable = Callable()
 
 ## `func(rows: Array) -> Array`: a game decorating the rows (a mode line, a thumbnail) or
@@ -88,7 +88,7 @@ var last_result: Dictionary = {}
 func bind(host: Object, adder: String) -> void:
 	# Renames, aliases and the collision check are the rest of the commands' (maps.yml `commands:`).
 	for full in commands.command_names("mapmenu"):
-		if not DotCommandNames.available(host, full, commands.registered, "mapmenu", "vote"):
+		if not GSCommandNames.available(host, full, commands.registered, "mapmenu", "vote"):
 			commands.skipped.append(full)
 			continue
 		var registered_command: Variant = host.call(adder, full, _cmd, "The map menu: list the maps, or change to one", "")
@@ -165,7 +165,7 @@ func min_voters() -> int:
 func humans() -> int:
 	if humans_fn.is_valid():
 		return int(humans_fn.call())
-	var server: Object = DotRegistry.get_service(&"dot_server")
+	var server: Object = GSRegistry.get_service(&"dot_server")
 	if server != null and server.has_method("playing_sessions"):
 		return (server.call("playing_sessions") as Array).size()
 	return -1
@@ -245,7 +245,7 @@ func rows() -> Array:
 	return out
 
 
-static func _thumbnail(choice: DotVoteChoice) -> String:
+static func _thumbnail(choice: GSVoteChoice) -> String:
 	if choice.meta.has("thumbnail"):
 		return str(choice.meta["thumbnail"])
 	var map: Variant = choice.meta.get("map")
@@ -304,7 +304,7 @@ func choose(ctx: Object, id: StringName, mode: StringName = &"") -> Dictionary:
 		var text := "Changing maps needs a vote of the players here, and %s." % (
 			"you are the only one" if here <= 1 else "that takes %d players (%d here)" % [needed_voters, here])
 		parts.append(text)
-		DotLog.info(CHANNEL, "a map menu choice is a nomination only: too few humans to vote", {
+		GSLog.info(CHANNEL, "a map menu choice is a nomination only: too few humans to vote", {
 			"map": String(id), "by": _who(ctx), "humans": here, "needed": needed_voters})
 		return _result(nominated.ok, " ".join(parts), "voted" if nominated.ok else "refused")
 	if not director.clock.has_rocked(voter):
@@ -312,7 +312,7 @@ func choose(ctx: Object, id: StringName, mode: StringName = &"") -> Dictionary:
 		var passes_at := director.clock.rtv_needed(director.player_count())
 		if passes_at > 0 and after >= passes_at and after * 2 <= here:
 			parts.append("Changing maps needs most of the %d players here to ask (%d so far): type %s once more of them want it." % [here, after - 1, commands.typed("rtv") if commands != null else "!rtv"])
-			DotLog.warn(CHANNEL, "the vote's rules would pass a rock-the-vote without a majority of the humans; not rocked", {
+			GSLog.warn(CHANNEL, "the vote's rules would pass a rock-the-vote without a majority of the humans; not rocked", {
 				"humans": here, "votes": after, "rules_need": passes_at, "director_count": director.player_count()})
 			return _result(nominated.ok, " ".join(parts), "voted" if nominated.ok else "refused")
 	var rocked := director.rock_the_vote(voter)
@@ -328,14 +328,14 @@ func _change_now(ctx: Object, id: StringName, label: String, mode: StringName = 
 	var director := commands.director
 	if mode != &"" and mode_fn.is_valid():
 		var moded: Variant = await mode_fn.call(id, mode)
-		if moded is DotResult and not (moded as DotResult).ok:
-			return _result(false, (moded as DotResult).error.message, "refused")
+		if moded is GSResult and not (moded as GSResult).ok:
+			return _result(false, (moded as GSResult).error.message, "refused")
 		label = "%s (%s)" % [label, mode]
 	# Whoever may change the map outright (staff, or the only human) outranks an open ballot:
 	# one left open by players who have since gone refused the last person on the server.
 	if director.is_voting():
 		var _called_off := director.cancel_vote()
-	var changed: DotResult = null
+	var changed: GSResult = null
 	if change_fn.is_valid():
 		changed = await change_fn.call(id)
 	elif director.source.supports_apply():
@@ -343,11 +343,11 @@ func _change_now(ctx: Object, id: StringName, label: String, mode: StringName = 
 		if changed.ok and director.begin_on_apply:
 			director.begin(id)
 	else:
-		changed = DotResult.fail(DotError.CODE_UNSUPPORTED, "This game cannot change the map from here.")
+		changed = GSResult.fail(GSError.CODE_UNSUPPORTED, "This game cannot change the map from here.")
 	if changed == null or not changed.ok:
 		return _result(false, changed.error.message if changed != null and changed.error != null else "The change failed.", "refused")
 	var why := "staff" if is_staff(ctx) else "alone"
-	DotLog.info(CHANNEL, "map changed from the menu", {"map": String(id), "by": _who(ctx), "as": why})
+	GSLog.info(CHANNEL, "map changed from the menu", {"map": String(id), "by": _who(ctx), "as": why})
 	if director.announce_fn.is_valid():
 		director.announce_fn.call("%s changed the map to %s." % [_who(ctx), label])
 	return _result(true, "Changing to %s." % label, "changed")
@@ -429,7 +429,7 @@ func _send(ctx: Object, data: Dictionary) -> bool:
 	var session: Variant = ctx.get("session")
 	if not (session is Object) or not ResourceLoader.exists(NOTICE_SCRIPT):
 		return false
-	var server: Object = DotRegistry.get_service(&"dot_server")
+	var server: Object = GSRegistry.get_service(&"dot_server")
 	if server == null or not server.has_method("send_notice"):
 		return false
 	var notice: Object = (load(NOTICE_SCRIPT) as GDScript).call("make", &"", "", -1.0, TOPIC, data)

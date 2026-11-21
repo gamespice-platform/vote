@@ -12,7 +12,7 @@ func _test_every_setting_is_read() -> void:
 
 	_check(sources.size() >= 12, "%d scripts scanned" % sources.size())
 
-	var rules := DotVoteRules.new()
+	var rules := GSVoteRules.new()
 	var declarations := str(sources.get("res://addons/dot_vote/core/dot_vote_rules.gd", ""))
 	var unread := PackedStringArray()
 

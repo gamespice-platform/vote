@@ -2,7 +2,7 @@
 
 Servers in this genre have run the same three plugins for fifteen years: a map chooser (the end-of-map ballot), a rock-the-vote, and nominations, plus a fourth that plays sounds over the first. Every setting, command, query and event those four expose is listed below against what covers it here — so a server owner who knows the old cvar can find the new setting, and so a gap is a row that says so rather than a feature nobody noticed was missing.
 
-The old names are kept only as a lookup key. Nothing here reads them: every setting is a `DotVoteRules` field, layered `defaults < file < DOT_VOTE_* < --vote-*`, enums by name.
+The old names are kept only as a lookup key. Nothing here reads them: every setting is a `GSVoteRules` field, layered `defaults < file < DOT_VOTE_* < --vote-*`, enums by name.
 
 Legend: **have** — it was already here; **new** — added for parity; **different** — covered, deliberately in another shape; **not** — deliberately not here, with the reason.
 
@@ -12,11 +12,11 @@ Legend: **have** — it was already here; **new** — added for parity; **differ
 | --- | --- | --- |
 | `mce_endvote` | `end_vote` | **new**. The switch: off, limits still end the map and the rotation, an admin's `setnextmap` or a rock-the-vote decides what is next. `trigger: rtv_only` is the same thing, and used to open a ballot at the lead anyway — fixed. |
 | `mce_starttime` | `vote_lead_sec` | have. Seconds, not minutes. |
-| (the engines' own "finish the round when the map's time is up") | `time_up`, `finish_round_max_sec`, `DotVoteDirector.round_based` | **new**. `change_now` or `finish_round`, capped; only on a host that reports round ends, and only for a time or score limit. |
-| — (a numbered menu, or a sandbox's clickable map vote with avatars) | `ballot_input`, `ballot_show_voters`, `DotVoteBallotView`, `DotVoteBallotFeed` | **new**. What a client needs to draw the ballot; GameSpice UI's `DotBallotPanel` draws it. |
+| (the engines' own "finish the round when the map's time is up") | `time_up`, `finish_round_max_sec`, `GSVoteDirector.round_based` | **new**. `change_now` or `finish_round`, capped; only on a host that reports round ends, and only for a time or score limit. |
+| — (a numbered menu, or a sandbox's clickable map vote with avatars) | `ballot_input`, `ballot_show_voters`, `GSVoteBallotView`, `GSVoteBallotFeed` | **new**. What a client needs to draw the ballot; GameSpice UI's `GSBallotPanel` draws it. |
 | `mce_start_percent`, `mce_start_percent_enable` | `vote_lead_fraction` | **new**. One setting: 0 is off. Measured against the limit as extended. |
 | `mce_startround` | `vote_lead_rounds` | have. |
-| `mce_startfrags` | `vote_lead_score` with `score_limit` | **new**. A generic score the host reports through `DotVoteDirector.note_score` — frags, team wins, points. `trigger: score_limit` for a game whose only limit is a score. |
+| `mce_startfrags` | `vote_lead_score` with `score_limit` | **new**. A generic score the host reports through `GSVoteDirector.note_score` — frags, team wins, points. `trigger: score_limit` for a game whose only limit is a score. |
 | `mp_winlimit` / `mp_maxrounds` / `mp_fraglimit` (read by the chooser) | `round_limit`, `score_limit`, `duration_sec` | have / **new**. The limits are the vote's own, with per-choice overrides for time and rounds. |
 | `mce_extend` | `include_extend`, `max_extends` | have. Note the old `0` meant "no extends"; here `max_extends: 0` is unlimited and `include_extend: false` is none. "Extend" leaves the ballot once the extensions are used up, as the plugin's does (`mapchooser_extended.sp` checks the extend count before adding it); **new here** in the sense that GameSpice Vote's own first version offered it and then refused it. |
 | `mce_extend_timestep` | `extend_seconds` | have. Seconds, not minutes. |
@@ -32,14 +32,14 @@ Legend: **have** — it was already here; **new** — added for parity; **differ
 | `mce_runoffvotewarningtime` | `runoff_warning_sec` | **new**. |
 | `mce_hidetimer` | `announce_countdown_every_sec` | **new**. Off announces the start only; the tick signal fires either way. |
 | `mce_warningtimerlocation` | — | **not**. Where a countdown is drawn is the host's; `countdown_tick` carries the number. |
-| `mce_markcustommaps` | `unofficial_marker` and `DotVoteChoice.official` | **new**. `"*%s"` by default, `""` off, `"%s (custom)"` for the phrase. A source reads `official` from the thing's own `vote:` metadata. |
+| `mce_markcustommaps` | `unofficial_marker` and `GSVoteChoice.official` | **new**. `"*%s"` by default, `""` off, `"%s (custom)"` for the phrase. A source reads `official` from the thing's own `vote:` metadata. |
 | `mce_extendposition` | `pseudo_options_first` | **new**. Presentation only: ties are still broken choices-first. |
 | `mce_randomizeorder` | `shuffle_ballot` | **new**. Seeded from `fill_seed`, so a client reproduces it. |
 | `mce_addnovote` | `include_abstain` | **new**. Recorded, closes the voter's part, counts toward the quorum, toward no option and no majority. |
 | `mce_blockslots`, `mce_menustyle` | — | **not**. Menu rendering; GameSpice Vote draws nothing. |
-| `sm_mapvote` | `revote` → `DotVoteDirector.start_vote(reason, force)` | have, **different**: now through the countdown, and replaces a change already decided. |
+| `sm_mapvote` | `revote` → `GSVoteDirector.start_vote(reason, force)` | have, **different**: now through the countdown, and replaces a change already decided. |
 | `sm_setnextmap` | `setnextmap` → `set_next(id)` | **new**. Applies at the end of the clock and counts as the end vote having finished. |
-| `mce_reload_maplist` | `votereload` → `reload()` / `DotVoteSource.reload()` | **new**. Most sources read live and have nothing to reload; `DotVoteListSource` re-reads its file. |
+| `mce_reload_maplist` | `votereload` → `reload()` / `GSVoteSource.reload()` | **new**. Most sources read live and have nothing to reload; `GSVoteListSource` re-reads its file. |
 | Retry while another vote is on screen | `busy_fn` | **new**. The due vote waits through the existing retry. |
 | Change at round end / instantly / at map end | `apply: end_of_round / immediate / end_of_time`, `apply_delay_sec` | have. |
 

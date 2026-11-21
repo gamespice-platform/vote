@@ -1,15 +1,15 @@
 @tool
 extends "res://addons/dot_vote/runtime/dot_vote_director_nominate.gd"
 
-## The ballot, countdown, casting and closing of [DotVoteDirector], kept apart so each file stays readable.
+## The ballot, countdown, casting and closing of [GSVoteDirector], kept apart so each file stays readable.
 
-## Starts a vote the way the rules want it: the [member DotVoteRules.vote_warning_sec] countdown first, or at once when there is none.
+## Starts a vote the way the rules want it: the [member GSVoteRules.vote_warning_sec] countdown first, or at once when there is none.
 ## What non-test code should call; [method open_vote] opens instantly, right for a client mirror or a suite.
 ## [param force] is an admin's "vote now": it replaces a change already decided instead of being refused.
 func start_vote(
-	reason: StringName = DotVoteClock.REASON_MANUAL,
+	reason: StringName = GSVoteClock.REASON_MANUAL,
 	force: bool = false
-) -> DotResult:
+) -> GSResult:
 	var ready := _can_open()
 
 	# Before has_alternatives: a server built with one map that has since been delivered a
@@ -28,16 +28,16 @@ func start_vote(
 		return ready
 
 	if state == State.COUNTDOWN:
-		return DotResult.fail(DotError.CODE_STATE, "A vote is about to start.")
+		return GSResult.fail(GSError.CODE_STATE, "A vote is about to start.")
 
 	if state == State.PENDING:
 		if not force:
-			return DotResult.fail(
-				DotError.CODE_STATE,
+			return GSResult.fail(
+				GSError.CODE_STATE,
 				"What plays next is already decided (%s)." % _name_of(_pending_id)
 			)
 
-		DotLog.info(CHANNEL, "a decided change was replaced by a new vote", {
+		GSLog.info(CHANNEL, "a decided change was replaced by a new vote", {
 			"was": String(_pending_id)
 		})
 		_pending_id = &""
@@ -46,21 +46,21 @@ func start_vote(
 	# After the PENDING check, so an admin replacing a decided change with nothing to
 	# replace it by is told so rather than having the decision thrown away.
 	if not has_alternatives():
-		if reason == DotVoteClock.REASON_MANUAL:
-			return DotResult.fail(DotError.CODE_STATE, "There is nothing else to vote for.")
+		if reason == GSVoteClock.REASON_MANUAL:
+			return GSResult.fail(GSError.CODE_STATE, "There is nothing else to vote for.")
 
 		# Success: the due vote is dealt with. A failure here would be retried every frame.
 		_pass_over(reason)
-		return DotResult.success(0.0)
+		return GSResult.success(0.0)
 
 	if _lone_auto(reason):
-		DotLog.info(CHANNEL, "auto ballot skipped: one voter", {"reason": String(reason)})
+		GSLog.info(CHANNEL, "auto ballot skipped: one voter", {"reason": String(reason)})
 		_pass_over(reason)
-		return DotResult.success(0.0)
+		return GSResult.success(0.0)
 
 	if rules.vote_warning_sec > 0.0:
 		_begin_countdown(rules.vote_warning_sec, false, reason)
-		return DotResult.success(rules.vote_warning_sec)
+		return GSResult.success(rules.vote_warning_sec)
 
 	return open_vote(reason)
 
@@ -76,46 +76,46 @@ func _refused_only_for_busy() -> bool:
 
 
 ## Why a ballot could not open right now, or success.
-func _can_open() -> DotResult:
+func _can_open() -> GSResult:
 	if not rules.enabled:
-		return DotResult.fail(DotError.CODE_UNSUPPORTED, "Voting is turned off.")
+		return GSResult.fail(GSError.CODE_UNSUPPORTED, "Voting is turned off.")
 
 	if state == State.VOTING:
-		return DotResult.fail(DotError.CODE_STATE, "A vote is already running.")
+		return GSResult.fail(GSError.CODE_STATE, "A vote is already running.")
 
 	if source == null:
-		return DotResult.fail(DotError.CODE_STATE, "No source.")
+		return GSResult.fail(GSError.CODE_STATE, "No source.")
 
 	var players := player_count()
 
 	if players < rules.min_players_to_vote:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"There are not enough players to hold a vote.",
 			"%d here, %d needed" % [players, rules.min_players_to_vote]
 		)
 
 	if _cooldown_remaining > 0.0:
-		return DotResult.fail(
-			DotError.CODE_RATE_LIMITED,
+		return GSResult.fail(
+			GSError.CODE_RATE_LIMITED,
 			"Another vote can start in %ds." % int(ceil(_cooldown_remaining))
 		)
 
 	if _busy():
-		return DotResult.fail(
-			DotError.CODE_STATE, "Another vote is on screen; this one will follow it."
+		return GSResult.fail(
+			GSError.CODE_STATE, "Another vote is on screen; this one will follow it."
 		)
 
-	return DotResult.success(true)
+	return GSResult.success(true)
 
 
 ## Opens a ballot now, with no countdown.
 ## [param only] puts exactly those ids on the ballot (an admin's shortlist); unknown ids are dropped with a warning,
 ## not a refusal of the whole ballot.
 func open_vote(
-	reason: StringName = DotVoteClock.REASON_MANUAL,
+	reason: StringName = GSVoteClock.REASON_MANUAL,
 	only: Array[StringName] = []
-) -> DotResult:
+) -> GSResult:
 	var ready := _can_open()
 
 	if not ready.ok:
@@ -126,7 +126,7 @@ func open_vote(
 	_refresh_source()
 
 	var players := player_count()
-	var options: Array[DotVoteChoice] = (
+	var options: Array[GSVoteChoice] = (
 		build_options(players) if only.is_empty() else _choices_for(only)
 	)
 
@@ -134,14 +134,14 @@ func open_vote(
 		options = _shuffle(options)
 
 	ballot.extend_available = clock.can_extend()
-	ballot.early = reason == DotVoteClock.REASON_RTV
+	ballot.early = reason == GSVoteClock.REASON_RTV
 
 	var started := ballot.begin(options, maxi(_eligible_count(), 1))
 
 	if not started.ok:
 		return started
 
-	nominations.clear(DotVoteNominations.REASON_BALLOT)
+	nominations.clear(GSVoteNominations.REASON_BALLOT)
 
 	state = State.VOTING
 	_vote_reason = reason
@@ -155,7 +155,7 @@ func open_vote(
 	for choice in options:
 		names.append(ballot_name(choice))
 
-	DotLog.info(CHANNEL, "vote opened", {
+	GSLog.info(CHANNEL, "vote opened", {
 		"reason": String(reason), "options": names.size(), "eligible": ballot.eligible
 	})
 
@@ -164,17 +164,17 @@ func open_vote(
 
 	vote_opened.emit(ballot.option_ids(), _vote_remaining)
 
-	return DotResult.success(options)
+	return GSResult.success(options)
 
 
-func _choices_for(ids: Array[StringName]) -> Array[DotVoteChoice]:
-	var out: Array[DotVoteChoice] = []
+func _choices_for(ids: Array[StringName]) -> Array[GSVoteChoice]:
+	var out: Array[GSVoteChoice] = []
 
 	for id in ids:
 		var choice := source.find(id) if source != null else null
 
 		if choice == null:
-			DotLog.warn(CHANNEL, "a hand-picked option is not in the source", {
+			GSLog.warn(CHANNEL, "a hand-picked option is not in the source", {
 				"id": String(id)
 			})
 			continue
@@ -191,7 +191,7 @@ func _begin_countdown(seconds: float, runoff: bool, reason: StringName) -> void:
 	_countdown_reason = reason
 	_countdown_last = int(ceil(seconds))
 
-	DotLog.info(CHANNEL, "counting down to a ballot", {
+	GSLog.info(CHANNEL, "counting down to a ballot", {
 		"seconds": seconds, "runoff": runoff, "reason": String(reason)
 	})
 
@@ -234,7 +234,7 @@ func _advance_countdown(delta: float) -> void:
 		return
 
 	if _lone_auto(_countdown_reason):
-		DotLog.info(CHANNEL, "auto ballot skipped: one voter", {"reason": String(_countdown_reason)})
+		GSLog.info(CHANNEL, "auto ballot skipped: one voter", {"reason": String(_countdown_reason)})
 		_pass_over(_countdown_reason)
 		return
 
@@ -245,7 +245,7 @@ func _advance_countdown(delta: float) -> void:
 		_vote_due_pending = true
 		_vote_due_reason = _countdown_reason
 
-		DotLog.warn(CHANNEL, "the counted-down vote could not open; will retry", {
+		GSLog.warn(CHANNEL, "the counted-down vote could not open; will retry", {
 			"why": opened.error.message
 		})
 
@@ -285,8 +285,8 @@ func cancel_vote() -> bool:
 	if state != State.VOTING:
 		return false
 
-	var result := DotVoteResult.empty("The vote was called off.")
-	DotLog.info(CHANNEL, "vote called off", {"reason": String(_vote_reason)})
+	var result := GSVoteResult.empty("The vote was called off.")
+	GSLog.info(CHANNEL, "vote called off", {"reason": String(_vote_reason)})
 	_say(result.summary)
 	vote_closed.emit(result)
 	_carry_on()
@@ -294,13 +294,13 @@ func cancel_vote() -> bool:
 
 
 ## Records a vote. [param choices] is in preference order; one entry is the usual case.
-func cast_vote(voter: StringName, choices: Array[StringName]) -> DotResult:
+func cast_vote(voter: StringName, choices: Array[StringName]) -> GSResult:
 	if state != State.VOTING:
-		return DotResult.fail(DotError.CODE_STATE, "There is no vote running.")
+		return GSResult.fail(GSError.CODE_STATE, "There is no vote running.")
 
 	if not rules.spectators_may_vote and _is_spectator(voter):
-		return DotResult.fail(
-			DotError.CODE_FORBIDDEN, "You must be in the game to vote."
+		return GSResult.fail(
+			GSError.CODE_FORBIDDEN, "You must be in the game to vote."
 		)
 
 	var result := ballot.cast_vote(voter, choices, _weight_for(voter))
@@ -312,14 +312,14 @@ func cast_vote(voter: StringName, choices: Array[StringName]) -> DotResult:
 
 
 ## Convenience for the overwhelmingly common case of one choice.
-func cast_one(voter: StringName, choice: StringName) -> DotResult:
+func cast_one(voter: StringName, choice: StringName) -> GSResult:
 	return cast_vote(voter, [choice] as Array[StringName])
 
 
 ## Closes the ballot and acts on it.
-func close_vote() -> DotVoteResult:
+func close_vote() -> GSVoteResult:
 	if state != State.VOTING:
-		return DotVoteResult.empty("There is no vote running.")
+		return GSVoteResult.empty("There is no vote running.")
 
 	var result := ballot.resolve()
 
@@ -327,7 +327,7 @@ func close_vote() -> DotVoteResult:
 
 	_cooldown_remaining = rules.vote_cooldown_sec
 
-	DotLog.info(CHANNEL, "vote closed", result.describe())
+	GSLog.info(CHANNEL, "vote closed", result.describe())
 	_say(result.summary)
 	_cue(rules.cue_vote_end)
 
@@ -336,7 +336,7 @@ func close_vote() -> DotVoteResult:
 	var moment := _moment_for(_vote_reason)
 
 	match result.outcome:
-		DotVoteResult.Outcome.RUNOFF:
+		GSVoteResult.Outcome.RUNOFF:
 			if rules.runoff_warning_sec > 0.0:
 				_runoff_ids = result.runoff_ids.duplicate()
 				_begin_countdown(rules.runoff_warning_sec, true, _vote_reason)
@@ -346,20 +346,20 @@ func close_vote() -> DotVoteResult:
 			_open_runoff()
 			return result
 
-		DotVoteResult.Outcome.EXTEND:
+		GSVoteResult.Outcome.EXTEND:
 			state = State.RUNNING
 			_extend_now()
 			return result
 
-		DotVoteResult.Outcome.KEEP:
+		GSVoteResult.Outcome.KEEP:
 			_carry_on()
 			return result
 
-		DotVoteResult.Outcome.NO_QUORUM:
+		GSVoteResult.Outcome.NO_QUORUM:
 			_after_no_quorum(result, moment)
 			return result
 
-		DotVoteResult.Outcome.EMPTY:
+		GSVoteResult.Outcome.EMPTY:
 			_carry_on()
 			return result
 
@@ -386,7 +386,7 @@ func _open_runoff() -> void:
 
 ## The moment a winner of a ballot opened for [param reason] waits for.
 func _moment_for(reason: StringName) -> int:
-	if reason == DotVoteClock.REASON_RTV:
+	if reason == GSVoteClock.REASON_RTV:
 		return rules.rtv_apply
 
 	return rules.apply
@@ -398,7 +398,7 @@ func _moment_for(reason: StringName) -> int:
 func _carry_on() -> void:
 	state = State.RUNNING
 
-	if _vote_reason == DotVoteClock.REASON_RTV:
+	if _vote_reason == GSVoteClock.REASON_RTV:
 		clock.resume()
 		clock.block_rtv_for(rules.rtv_interval_sec)
 		return
@@ -406,10 +406,10 @@ func _carry_on() -> void:
 	clock.start(source.find(_current_id) if source != null else null)
 
 
-## Decides a ballot nobody voted in, per [member DotVoteRules.on_no_votes].
+## Decides a ballot nobody voted in, per [member GSVoteRules.on_no_votes].
 ## Done before the result is announced, so [signal vote_closed] carries what actually happens.
-func _decide_no_votes(result: DotVoteResult) -> void:
-	if result.outcome != DotVoteResult.Outcome.EMPTY or ballot.options.is_empty():
+func _decide_no_votes(result: GSVoteResult) -> void:
+	if result.outcome != GSVoteResult.Outcome.EMPTY or ballot.options.is_empty():
 		return
 
 	if ballot.real_voter_count() > 0:
@@ -419,14 +419,14 @@ func _decide_no_votes(result: DotVoteResult) -> void:
 	var how := ""
 
 	match rules.on_no_votes:
-		DotVoteRules.NoVotes.RANDOM:
+		GSVoteRules.NoVotes.RANDOM:
 			# Only the ballot's real options: never "extend", which the long-standing
 			# map-choosers also refuse to draw — a server nobody answered does not get
 			# more time for it.
 			var rng := _rng()
 			picked = ballot.options[rng.randi_range(0, ballot.options.size() - 1)].id
 			how = "drawn, because nobody voted"
-		DotVoteRules.NoVotes.ROTATION:
+		GSVoteRules.NoVotes.ROTATION:
 			picked = _next_in_rotation()
 			how = "next in rotation, because nobody voted"
 		_:
@@ -435,19 +435,19 @@ func _decide_no_votes(result: DotVoteResult) -> void:
 	if picked == &"":
 		return
 
-	result.outcome = DotVoteResult.Outcome.WINNER
+	result.outcome = GSVoteResult.Outcome.WINNER
 	result.winner_id = picked
 	result.winner = source.find(picked) if source != null else null
 	result.tie_break = how
 	result.summary = "Nobody voted; %s is next (%s)." % [_name_of(picked), how]
 
 
-func _after_no_quorum(result: DotVoteResult, moment: int) -> void:
+func _after_no_quorum(result: GSVoteResult, moment: int) -> void:
 	match rules.on_no_quorum:
-		DotVoteRules.NoQuorum.KEEP:
+		GSVoteRules.NoQuorum.KEEP:
 			_carry_on()
 
-		DotVoteRules.NoQuorum.ROTATION:
+		GSVoteRules.NoQuorum.ROTATION:
 			# The source's own order decides. Not the ballot's leader: the point of this
 			# setting is that a ballot too few people voted in should not choose.
 			var next := _next_in_rotation()
@@ -461,8 +461,8 @@ func _after_no_quorum(result: DotVoteResult, moment: int) -> void:
 		_:
 			if (
 				result.winner_id == &""
-				or result.winner_id == DotVoteBallot.EXTEND
-				or result.winner_id == DotVoteBallot.KEEP
+				or result.winner_id == GSVoteBallot.EXTEND
+				or result.winner_id == GSVoteBallot.KEEP
 			):
 				_carry_on()
 				return
@@ -476,7 +476,7 @@ func _extend_now() -> void:
 		return
 
 	# Out of extends yet players voted for one: only a host casting EXTEND by hand reaches this
-	# (DotVoteBallot.extend_available hides it). Left running rather than silently changing;
+	# (GSVoteBallot.extend_available hides it). Left running rather than silently changing;
 	# the clock is expired, so say so and let the next vote decide.
 	_say("This cannot be extended again.")
 	clock.start(source.find(_current_id) if source != null else null)
@@ -491,42 +491,42 @@ func vote_seconds_remaining() -> float:
 
 
 ## Rocks the vote on everybody's behalf. An admin's command.
-## With the next choice already decided it brings that forward whatever [member DotVoteRules.rtv_after_decided]
+## With the next choice already decided it brings that forward whatever [member GSVoteRules.rtv_after_decided]
 ## says; otherwise it is exactly a rock-the-vote passing.
-func force_rtv() -> DotResult:
+func force_rtv() -> GSResult:
 	if not rules.enabled:
-		return DotResult.fail(DotError.CODE_UNSUPPORTED, "Voting is turned off.")
+		return GSResult.fail(GSError.CODE_UNSUPPORTED, "Voting is turned off.")
 
 	if state == State.PENDING:
-		_pending_moment = DotVoteRules.Apply.IMMEDIATE
+		_pending_moment = GSVoteRules.Apply.IMMEDIATE
 		_pending_delay = rules.apply_delay_sec
 		_say("Changing to %s." % _name_of(_pending_id))
-		return DotResult.success(_pending_id)
+		return GSResult.success(_pending_id)
 
 	if state != State.RUNNING:
-		return DotResult.fail(DotError.CODE_STATE, "A vote is already on the way.")
+		return GSResult.fail(GSError.CODE_STATE, "A vote is already on the way.")
 
 	if clock.is_expired():
 		# Nothing left to expire — a vote-only server, or a limit that ran out with no
 		# ballot. Open one as a rock-the-vote directly.
-		return start_vote(DotVoteClock.REASON_RTV, true)
+		return start_vote(GSVoteClock.REASON_RTV, true)
 
 	_forcing = true
-	clock.expire_now(DotVoteClock.REASON_RTV)
+	clock.expire_now(GSVoteClock.REASON_RTV)
 	_forcing = false
 
-	return DotResult.success(true)
+	return GSResult.success(true)
 
 
 ## A vote fell due with nothing to choose between, so none is held and play carries on.
 ## Not a ballot of Extend alone, and not a refusal (the due vote would retry and the clock sit expired forever).
 ## The clock restarts as an Extend would leave it, minus the extend it would have used.
 func _pass_over(reason: StringName) -> void:
-	DotLog.info(CHANNEL, "a vote was due and there is nothing else to vote for; carrying on", {
+	GSLog.info(CHANNEL, "a vote was due and there is nothing else to vote for; carrying on", {
 		"reason": String(reason), "current": String(_current_id),
 	})
 
-	if reason == DotVoteClock.REASON_RTV:
+	if reason == GSVoteClock.REASON_RTV:
 		_say("There is nothing else to vote for.")
 
 	_vote_reason = reason

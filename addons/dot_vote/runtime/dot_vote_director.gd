@@ -1,5 +1,5 @@
 @tool
-class_name DotVoteDirector
+class_name GSVoteDirector
 extends "res://addons/dot_vote/runtime/dot_vote_director_ballot.gd"
 
 ## The node a game adds: the clock, the nominations, the ballot and the change, driven by one call per tick (see docs/design.md for setup).
@@ -9,19 +9,19 @@ extends "res://addons/dot_vote/runtime/dot_vote_director_ballot.gd"
 
 func _ready() -> void:
 	if rules == null:
-		rules = DotVoteRules.new()
+		rules = GSVoteRules.new()
 
 	if history == null:
-		history = DotVoteHistory.of(rules)
+		history = GSVoteHistory.of(rules)
 
 	if nominations == null:
-		nominations = DotVoteNominations.of(rules)
+		nominations = GSVoteNominations.of(rules)
 
 	if ballot == null:
-		ballot = DotVoteBallot.of(rules)
+		ballot = GSVoteBallot.of(rules)
 
 	if clock == null:
-		clock = DotVoteClock.of(rules)
+		clock = GSVoteClock.of(rules)
 
 	history.rules = rules
 	nominations.rules = rules
@@ -49,14 +49,14 @@ func _ready() -> void:
 	)
 
 	if register_service:
-		DotRegistry.register(SERVICE, self)
+		GSRegistry.register(SERVICE, self)
 
 	set_physics_process(self_advance)
 
 
 func _exit_tree() -> void:
 	if register_service:
-		DotRegistry.unregister_instance(SERVICE, self)
+		GSRegistry.unregister_instance(SERVICE, self)
 
 
 func _physics_process(delta: float) -> void:
@@ -64,7 +64,7 @@ func _physics_process(delta: float) -> void:
 
 
 ## Stops (true) or starts (false) everything this director counts, for a server that hibernates while empty.
-## Nothing advances while hibernating, so the first player in does not get a map with a minute left; on waking, [member DotVoteRules.wake_restart] picks restart or resume.
+## Nothing advances while hibernating, so the first player in does not get a map with a minute left; on waking, [member GSVoteRules.wake_restart] picks restart or resume.
 func set_hibernating(on: bool) -> void:
 	if on == hibernating:
 		return
@@ -72,7 +72,7 @@ func set_hibernating(on: bool) -> void:
 	hibernating = on
 
 	if on:
-		DotLog.info(CHANNEL, "hibernating; the clock waits", {
+		GSLog.info(CHANNEL, "hibernating; the clock waits", {
 			"id": String(_current_id), "left": clock.formatted_remaining() if clock != null else "-",
 		})
 		return
@@ -80,7 +80,7 @@ func set_hibernating(on: bool) -> void:
 	if rules != null and rules.wake_restart and clock != null:
 		restart()
 	else:
-		DotLog.info(CHANNEL, "awake; the clock resumes", {"id": String(_current_id)})
+		GSLog.info(CHANNEL, "awake; the clock resumes", {"id": String(_current_id)})
 
 
 ## Follows a server's hibernation: [method set_hibernating] on its [code]hibernation_changed(bool)[/code] signal, from its current state.
@@ -157,7 +157,7 @@ func _advance_vote(delta: float) -> void:
 
 
 ## Records the end of a round. Returns whether that ended the current choice.
-## Under [constant DotVoteRules.Trigger.ROUND_END] a ballot held back by a limit opens here.
+## Under [constant GSVoteRules.Trigger.ROUND_END] a ballot held back by a limit opens here.
 func note_round_end() -> bool:
 	# Before the clock hears it: a round ending AFTER the limit ran out is the end of the
 	# round a FINISH_ROUND was holding the change for. The round that ran the limit out —
@@ -167,7 +167,7 @@ func note_round_end() -> bool:
 
 	var over := clock.note_round_end()
 
-	if state == State.PENDING and _pending_moment == DotVoteRules.Apply.END_OF_ROUND:
+	if state == State.PENDING and _pending_moment == GSVoteRules.Apply.END_OF_ROUND:
 		_pending_delay = 0.0
 		_do_change()
 
@@ -185,7 +185,7 @@ func note_round_end() -> bool:
 				# for a cooldown or a head count is owed, not cancelled.
 				_vote_due_pending = true
 
-				DotLog.warn(CHANNEL, "the round ended and the vote could not open yet; will retry", {
+				GSLog.warn(CHANNEL, "the round ended and the vote could not open yet; will retry", {
 					"reason": String(_vote_due_reason), "why": opened.error.message
 				})
 
@@ -197,7 +197,7 @@ func is_waiting_for_round_end() -> bool:
 	return _vote_due_at_round_end
 
 
-## Records the leading score, for [member DotVoteRules.score_limit]. Returns whether that ended the current choice.
+## Records the leading score, for [member GSVoteRules.score_limit]. Returns whether that ended the current choice.
 ## What a score is, is the game's; this only compares it with a number.
 func note_score(score: int) -> bool:
 	return clock.note_score(score)
@@ -207,13 +207,13 @@ func _on_vote_due(reason: StringName) -> void:
 	if not rules.enabled or state != State.RUNNING:
 		return
 
-	if reason == DotVoteClock.REASON_RTV:
+	if reason == GSVoteClock.REASON_RTV:
 		match rules.rtv_outcome:
-			DotVoteRules.RtvOutcome.CHANGE_NOW:
+			GSVoteRules.RtvOutcome.CHANGE_NOW:
 				_vote_reason = reason
-				_schedule_change(_next_in_rotation(), DotVoteRules.Apply.IMMEDIATE)
+				_schedule_change(_next_in_rotation(), GSVoteRules.Apply.IMMEDIATE)
 				return
-			DotVoteRules.RtvOutcome.END_CURRENT:
+			GSVoteRules.RtvOutcome.END_CURRENT:
 				return
 			_:
 				pass
@@ -222,30 +222,30 @@ func _on_vote_due(reason: StringName) -> void:
 	# nothing here. A rock-the-vote is the players asking now and opens as under any trigger;
 	# vote_due fires before expired, so a host's own open from clock.expired is refused, not doubled.
 	if (
-		rules.trigger == DotVoteRules.Trigger.MANUAL
-		and reason != DotVoteClock.REASON_RTV
+		rules.trigger == GSVoteRules.Trigger.MANUAL
+		and reason != GSVoteClock.REASON_RTV
 		and not _forcing
 	):
 		return
 
 	# A limit running out asks the players only when the end-of-map vote is on. With it
 	# off the limit still ends the map, and _on_expired hands it to the rotation.
-	if reason != DotVoteClock.REASON_RTV and not end_vote_enabled():
+	if reason != GSVoteClock.REASON_RTV and not end_vote_enabled():
 		return
 
 	# Under round_end a time or score limit waits for the round to end. A round limit
 	# does not wait — it is only ever due from inside note_round_end, which IS the end of
 	# a round — and neither does a rock-the-vote, which is the players asking now.
 	if (
-		rules.trigger == DotVoteRules.Trigger.ROUND_END
-		and reason != DotVoteClock.REASON_RTV
-		and reason != DotVoteClock.REASON_ROUNDS
+		rules.trigger == GSVoteRules.Trigger.ROUND_END
+		and reason != GSVoteClock.REASON_RTV
+		and reason != GSVoteClock.REASON_ROUNDS
 		and not _forcing
 	):
 		_vote_due_at_round_end = true
 		_vote_due_reason = reason
 
-		DotLog.info(CHANNEL, "a vote is due and waits for the round to end", {
+		GSLog.info(CHANNEL, "a vote is due and waits for the round to end", {
 			"reason": String(reason)
 		})
 		return
@@ -257,7 +257,7 @@ func _on_vote_due(reason: StringName) -> void:
 		_vote_due_pending = true
 		_vote_due_reason = reason
 
-		DotLog.warn(CHANNEL, "could not open the vote yet; will retry", {
+		GSLog.warn(CHANNEL, "could not open the vote yet; will retry", {
 			"reason": String(reason), "why": opened.error.message
 		})
 
@@ -268,7 +268,7 @@ func _on_expired(reason: StringName) -> void:
 	_round_ended_since_expiry = false
 
 	if is_finishing_round():
-		DotLog.info(CHANNEL, "the limit is up; the round in progress is played out first", {
+		GSLog.info(CHANNEL, "the limit is up; the round in progress is played out first", {
 			"reason": String(reason), "at_most_sec": rules.finish_round_max_sec,
 		})
 		_say("Time is up. The change happens when this round ends.")
@@ -276,9 +276,9 @@ func _on_expired(reason: StringName) -> void:
 	if state == State.PENDING:
 		# A vote already decided this and is waiting for the clock; this IS that moment.
 		# Or the players rocked the vote after it was decided, and asked for it now.
-		if _pending_moment == DotVoteRules.Apply.END_OF_TIME or (
-			reason == DotVoteClock.REASON_RTV
-			and rules.rtv_after_decided == DotVoteRules.RtvAfterDecided.CHANGE_NOW
+		if _pending_moment == GSVoteRules.Apply.END_OF_TIME or (
+			reason == GSVoteClock.REASON_RTV
+			and rules.rtv_after_decided == GSVoteRules.RtvAfterDecided.CHANGE_NOW
 		):
 			_pending_delay = 0.0
 
@@ -294,10 +294,10 @@ func _on_expired(reason: StringName) -> void:
 	# Nobody here to ask. Only a limit — never a rock-the-vote or an admin, both of which
 	# are somebody. A hibernating server never gets here: its clock stops with the room.
 	if (
-		reason != DotVoteClock.REASON_RTV
-		and reason != DotVoteClock.REASON_MANUAL
+		reason != GSVoteClock.REASON_RTV
+		and reason != GSVoteClock.REASON_MANUAL
 		and player_count() <= 0
-		and rules.empty_choice != DotVoteRules.EmptyChoice.WAIT
+		and rules.empty_choice != GSVoteRules.EmptyChoice.WAIT
 	):
 		_resolve_empty(reason)
 		return
@@ -305,20 +305,20 @@ func _on_expired(reason: StringName) -> void:
 	# Nothing was voted on (RTV_ONLY, end-of-map vote off, or rtv_outcome END_CURRENT), so the
 	# rotation decides, or an expired limit would do nothing. MANUAL is left to its host.
 	var unasked := (
-		reason != DotVoteClock.REASON_RTV
+		reason != GSVoteClock.REASON_RTV
 		and not end_vote_enabled()
-		and rules.trigger != DotVoteRules.Trigger.MANUAL
+		and rules.trigger != GSVoteRules.Trigger.MANUAL
 	)
 
 	if unasked or (
-		rules.rtv_outcome == DotVoteRules.RtvOutcome.END_CURRENT
-		and reason == DotVoteClock.REASON_RTV
+		rules.rtv_outcome == GSVoteRules.RtvOutcome.END_CURRENT
+		and reason == GSVoteClock.REASON_RTV
 	):
 		_vote_reason = reason
 		_schedule_change(_next_in_rotation(), rules.apply)
 
 
-## A limit ran out on a server with nobody on it. See [enum DotVoteRules.EmptyChoice].
+## A limit ran out on a server with nobody on it. See [enum GSVoteRules.EmptyChoice].
 func _resolve_empty(reason: StringName) -> void:
 	# The vote that fell due at the lead and could not open for want of a voter is settled
 	# here, or it would open over the next map the moment somebody arrives.
@@ -330,27 +330,27 @@ func _resolve_empty(reason: StringName) -> void:
 	var how := ""
 
 	match rules.empty_choice:
-		DotVoteRules.EmptyChoice.RANDOM:
+		GSVoteRules.EmptyChoice.RANDOM:
 			picked = empty_draw()
 			how = "drawn at random"
-		DotVoteRules.EmptyChoice.ROTATION:
+		GSVoteRules.EmptyChoice.ROTATION:
 			picked = _next_in_rotation()
 			how = "next in rotation"
 
 	if picked == &"":
 		# A one-map server. Carry on with a fresh clock, as a ballot that chose Extend
 		# would, rather than sitting expired until somebody arrives.
-		DotLog.info(CHANNEL, "the limit is up on an empty server and there is nothing else; carrying on", {
+		GSLog.info(CHANNEL, "the limit is up on an empty server and there is nothing else; carrying on", {
 			"current": String(_current_id),
 		})
 		_carry_on()
 		return
 
-	DotLog.info(CHANNEL, "the limit is up and nobody is here to vote; changing", {
+	GSLog.info(CHANNEL, "the limit is up and nobody is here to vote; changing", {
 		"from": String(_current_id), "to": String(picked), "how": how,
 	})
 
 	# Nobody is playing a round worth finishing, so FINISH_ROUND has nothing to wait for; and
 	# nobody is reading a result, so apply_delay_sec — the pause that lets them — is 0.
 	_round_ended_since_expiry = true
-	_schedule_change(picked, DotVoteRules.Apply.IMMEDIATE, 0.0)
+	_schedule_change(picked, GSVoteRules.Apply.IMMEDIATE, 0.0)

@@ -1,16 +1,16 @@
-class_name DotVoteBallotFeed
+class_name GSVoteBallotFeed
 extends RefCounted
 
-## Sends a [DotVoteBallotView] whenever the ballot it describes changes, and nothing otherwise; call [method poll] every tick after director.advance.
-## Polled, not signal-driven: a voter who leaves is withdrawn by [method DotVoteDirector.forget_voter] without a signal. It does take [signal DotVoteDirector.vote_closed], since the result is gone by the next poll.
+## Sends a [GSVoteBallotView] whenever the ballot it describes changes, and nothing otherwise; call [method poll] every tick after director.advance.
+## Polled, not signal-driven: a voter who leaves is withdrawn by [method GSVoteDirector.forget_voter] without a signal. It does take [signal GSVoteDirector.vote_closed], since the result is gone by the next poll.
 ## Several feeds can run at once, each with its own [member title] and [member command], so a client can draw two ballots and answer each.
 
-## What [method poll] sends: one [Dictionary], a [DotVoteBallotView] state with
+## What [method poll] sends: one [Dictionary], a [GSVoteBallotView] state with
 ## [member title] and [member command] added.
 var send_fn: Callable = Callable()
 
-## Who a voter is, for the avatars. See [method DotVoteBallotView.state_of].
-## Also handed to [member DotVoteDirector.people_fn] when the director has none, so chat names the same player the ballot draws.
+## Who a voter is, for the avatars. See [method GSVoteBallotView.state_of].
+## Also handed to [member GSVoteDirector.people_fn] when the director has none, so chat names the same player the ballot draws.
 var people_fn: Callable = Callable():
 	set(value):
 		people_fn = value
@@ -25,17 +25,17 @@ var title: String = "Vote"
 ## [code]!<command> <n>[/code], which is exactly what a player typing it sends.
 var command: String = "votefor"
 
-var director: DotVoteDirector = null
+var director: GSVoteDirector = null
 
 ## The last state sent, so an unchanged ballot sends nothing. Empty: nothing sent yet.
 var _last: Dictionary = {}
 
-## A closed state waiting for the next [method poll], from [signal DotVoteDirector.vote_closed].
+## A closed state waiting for the next [method poll], from [signal GSVoteDirector.vote_closed].
 var _closed: Dictionary = {}
 
 
-static func of(p_director: DotVoteDirector, p_send_fn: Callable) -> DotVoteBallotFeed:
-	var feed := DotVoteBallotFeed.new()
+static func of(p_director: GSVoteDirector, p_send_fn: Callable) -> GSVoteBallotFeed:
+	var feed := GSVoteBallotFeed.new()
 	feed.director = p_director
 	feed.send_fn = p_send_fn
 
@@ -66,7 +66,7 @@ func poll() -> void:
 		# would replace the result a client is still showing with nothing.
 		return
 
-	if not _last.is_empty() and DotVoteBallotView.same_ballot(state, _last):
+	if not _last.is_empty() and GSVoteBallotView.same_ballot(state, _last):
 		return
 
 	_last = state
@@ -86,7 +86,7 @@ func current() -> Dictionary:
 	if not people.is_valid() and director != null:
 		people = director.people_fn
 
-	return _decorate(DotVoteBallotView.state_of(director, people))
+	return _decorate(GSVoteBallotView.state_of(director, people))
 
 
 ## Forgets what was sent, so the next [method poll] sends again. For a host whose clients
@@ -116,5 +116,5 @@ func _decorate(state: Dictionary) -> Dictionary:
 	return state
 
 
-func _on_closed(result: DotVoteResult) -> void:
-	_closed = DotVoteBallotView.closed_state(director, result)
+func _on_closed(result: GSVoteResult) -> void:
+	_closed = GSVoteBallotView.closed_state(director, result)

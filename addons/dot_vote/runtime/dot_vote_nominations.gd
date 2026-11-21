@@ -1,4 +1,4 @@
-class_name DotVoteNominations
+class_name GSVoteNominations
 extends RefCounted
 
 ## What players have asked to be on the next ballot.
@@ -22,34 +22,34 @@ signal removed(voter: StringName, id: StringName, reason: StringName)
 ## One nomination: [code]{id, voter, admin}[/code], in the order they arrived.
 var entries: Array[Dictionary] = []
 
-var rules: DotVoteRules = null
+var rules: GSVoteRules = null
 
 
-static func of(p_rules: DotVoteRules) -> DotVoteNominations:
-	var nominations := DotVoteNominations.new()
+static func of(p_rules: GSVoteRules) -> GSVoteNominations:
+	var nominations := GSVoteNominations.new()
 	nominations.rules = p_rules
 	return nominations
 
 
-## Records a nomination. Caps and duplicates only; whether the thing exists, is running or on cooldown is [DotVoteDirector]'s call.
+## Records a nomination. Caps and duplicates only; whether the thing exists, is running or on cooldown is [GSVoteDirector]'s call.
 ## [param forced] is an admin putting something on outright: it ignores caps and the off switch, and [method forced_ids] keeps it out of the player-reserved places.
 func add(
 	voter: StringName,
 	id: StringName,
 	is_admin: bool = false,
 	forced: bool = false
-) -> DotResult:
+) -> GSResult:
 	if rules == null:
-		return DotResult.fail(DotError.CODE_STATE, "No rules.")
+		return GSResult.fail(GSError.CODE_STATE, "No rules.")
 
 	if forced:
 		if not forced_ids().has(id):
 			entries.append({"id": id, "voter": voter, "admin": true, "forced": true})
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	if not rules.nominations_enabled:
-		return DotResult.fail(
-			DotError.CODE_UNSUPPORTED, "Nominations are turned off on this server."
+		return GSResult.fail(
+			GSError.CODE_UNSUPPORTED, "Nominations are turned off on this server."
 		)
 
 	var bypass := is_admin and rules.admin_nominations_bypass
@@ -57,19 +57,19 @@ func add(
 	if by_voter(voter).has(id):
 		# The same player, the same thing, twice. Not support — somebody pressing a key
 		# again because nothing visible happened.
-		return DotResult.fail(
-			DotError.CODE_STATE, "You have already nominated %s." % id
+		return GSResult.fail(
+			GSError.CODE_STATE, "You have already nominated %s." % id
 		)
 
 	if has_id(id) and not rules.nomination_seconding:
-		return DotResult.fail(
-			DotError.CODE_STATE, "%s is already nominated." % id
+		return GSResult.fail(
+			GSError.CODE_STATE, "%s is already nominated." % id
 		)
 
 	if not bypass:
 		if rules.nominations_max > 0 and entries.size() >= rules.nominations_max:
-			return DotResult.fail(
-				DotError.CODE_STATE,
+			return GSResult.fail(
+				GSError.CODE_STATE,
 				"The nomination list is full (%d)." % rules.nominations_max
 			)
 
@@ -82,19 +82,19 @@ func add(
 			if rules.nominations_per_player == 1:
 				remove(voter, mine[0], REASON_REPLACED)
 			else:
-				return DotResult.fail(
-					DotError.CODE_STATE,
+				return GSResult.fail(
+					GSError.CODE_STATE,
 					"You may only nominate %d at a time." % rules.nominations_per_player,
 					"withdraw one first"
 				)
 
 	entries.append({"id": id, "voter": voter, "admin": is_admin})
 
-	DotLog.debug(CHANNEL, "nominated", {
+	GSLog.debug(CHANNEL, "nominated", {
 		"id": String(id), "by": String(voter), "total": entries.size()
 	})
 
-	return DotResult.success(id)
+	return GSResult.success(id)
 
 
 func remove(
@@ -126,7 +126,7 @@ func remove_id(id: StringName, reason: StringName = REASON_ADMIN) -> int:
 
 
 ## Drops everything one player nominated, for a disconnect.
-## [DotVoteDirector] does not call it on disconnect (a nomination is a request for the server) but does withdraw rock-the-votes.
+## [GSVoteDirector] does not call it on disconnect (a nomination is a request for the server) but does withdraw rock-the-votes.
 func remove_voter(voter: StringName, reason: StringName = REASON_LEFT) -> int:
 	var count := 0
 
@@ -187,8 +187,8 @@ func ordered_ids() -> Array[StringName]:
 	return out
 
 
-## id -> how many people nominated it, for [constant DotVoteRules.Fill.MOST_NOMINATED].
-## Meaningful only with [member DotVoteRules.nomination_seconding].
+## id -> how many people nominated it, for [constant GSVoteRules.Fill.MOST_NOMINATED].
+## Meaningful only with [member GSVoteRules.nomination_seconding].
 func counts() -> Dictionary:
 	var out := {}
 

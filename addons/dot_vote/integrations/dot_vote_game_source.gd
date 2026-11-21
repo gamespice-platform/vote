@@ -1,7 +1,7 @@
-class_name DotVoteGameSource
-extends DotVoteSource
+class_name GSVoteGameSource
+extends GSVoteSource
 
-## Votes over the games a [code]DotGameManager[/code] can run.
+## Votes over the games a [code]GSGameManager[/code] can run.
 ## It names no GameSpice Server class, so the addon installs without GameSpice Server: the manager arrives as an [Object], duck-typed.
 ## Per-game settings sit in the descriptor's metadata under a [code]vote[/code] key ([code]time_limit_sec[/code], [code]weight[/code], [code]nominate_only[/code], [code]group[/code]).
 
@@ -10,7 +10,7 @@ const CHANNEL := "vote.games"
 ## The metadata key per-game vote settings are read from.
 const META_KEY := "vote"
 
-## A [code]DotGameManager[/code]. Duck-typed; see the class documentation.
+## A [code]GSGameManager[/code]. Duck-typed; see the class documentation.
 var manager: Object = null
 
 ## Game ids never offered, whatever the manager says.
@@ -22,7 +22,7 @@ var excluded: Array[StringName] = []
 var order: Array[StringName] = []
 
 
-static func of(p_manager: Object) -> DotVoteGameSource:
+static func of(p_manager: Object) -> GSVoteGameSource:
 	# Not this class's own name. A script that names itself in an expression, loaded after
 	# its base, cuts Godot 4.7.2's exit teardown short and leaks every script loaded before
 	# it. See docs/gdscript-hazards.md, "A script that names itself".
@@ -31,16 +31,16 @@ static func of(p_manager: Object) -> DotVoteGameSource:
 	return source
 
 
-## Finds the game manager in [DotRegistry], for a host that has one but no reference.
-static func from_registry() -> DotVoteGameSource:
-	return of(DotRegistry.get_service(&"dot_game_manager"))
+## Finds the game manager in [GSRegistry], for a host that has one but no reference.
+static func from_registry() -> GSVoteGameSource:
+	return of(GSRegistry.get_service(&"dot_game_manager"))
 
 
 ## What the RUNNING game's descriptor carries under [param key], or an empty dictionary.
-## For a module that must read its own game's [code]game.yml[/code] without naming the host's config class; duck-typed through [DotRegistry].
+## For a module that must read its own game's [code]game.yml[/code] without naming the host's config class; duck-typed through [GSRegistry].
 ## A copy, so a caller that layers it does not write into the descriptor.
 static func running_game_metadata(key: String) -> Dictionary:
-	var manager: Object = DotRegistry.get_service(&"dot_game_manager")
+	var manager: Object = GSRegistry.get_service(&"dot_game_manager")
 
 	if manager == null or not manager.has_method("current"):
 		return {}
@@ -74,8 +74,8 @@ func is_usable() -> bool:
 	)
 
 
-func choices() -> Array[DotVoteChoice]:
-	var out: Array[DotVoteChoice] = []
+func choices() -> Array[GSVoteChoice]:
+	var out: Array[GSVoteChoice] = []
 
 	if manager == null:
 		return out
@@ -83,7 +83,7 @@ func choices() -> Array[DotVoteChoice]:
 	var games: Variant = manager.get("games")
 
 	if not (games is Array):
-		DotLog.warn(CHANNEL, "the game manager has no games array", {
+		GSLog.warn(CHANNEL, "the game manager has no games array", {
 			"manager": str(manager)
 		})
 		return out
@@ -98,7 +98,7 @@ func choices() -> Array[DotVoteChoice]:
 			out.append(choice)
 
 	if not order.is_empty():
-		var rank := func(c: DotVoteChoice) -> int:
+		var rank := func(c: GSVoteChoice) -> int:
 			var at := order.find(c.id)
 			return at if at >= 0 else order.size()
 		# Stable by construction: ties compare equal and keep manager order.
@@ -113,13 +113,13 @@ func choices() -> Array[DotVoteChoice]:
 	return out
 
 
-func _to_choice(descriptor: Object) -> DotVoteChoice:
+func _to_choice(descriptor: Object) -> GSVoteChoice:
 	var id := StringName(str(descriptor.get("game_id")))
 
 	if id == &"" or excluded.has(id):
 		return null
 
-	var choice := DotVoteChoice.new()
+	var choice := GSVoteChoice.new()
 	choice.id = id
 	choice.display_name = str(descriptor.get("display_name"))
 	choice.group = &"game"
@@ -139,7 +139,7 @@ func _to_choice(descriptor: Object) -> DotVoteChoice:
 	return choice
 
 
-func _apply_meta(choice: DotVoteChoice, raw: Variant) -> void:
+func _apply_meta(choice: GSVoteChoice, raw: Variant) -> void:
 	if not (raw is Dictionary):
 		return
 
@@ -203,24 +203,24 @@ func supports_apply() -> bool:
 
 ## Changes the game. A coroutine: a game change waits for every client to fetch the
 ## content before it swaps.
-func apply(id: StringName) -> DotResult:
+func apply(id: StringName) -> GSResult:
 	if not is_usable():
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"No usable game manager.",
-			"DotVoteGameSource was given %s" % (
+			"GSVoteGameSource was given %s" % (
 				"nothing" if manager == null else str(manager)
 			)
 		)
 
-	DotLog.info(CHANNEL, "changing game by vote", {"to": String(id)})
+	GSLog.info(CHANNEL, "changing game by vote", {"to": String(id)})
 
 	var result: Variant = await manager.call("change_game", String(id), "vote")
 
-	if result is DotResult:
-		return result as DotResult
+	if result is GSResult:
+		return result as GSResult
 
-	return DotResult.success(id)
+	return GSResult.success(id)
 
 
 func describe() -> Dictionary:

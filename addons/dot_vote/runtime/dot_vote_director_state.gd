@@ -1,7 +1,7 @@
 @tool
 extends Node
 
-## The signals, enums, settings and state of [DotVoteDirector], kept apart so each file stays readable.
+## The signals, enums, settings and state of [GSVoteDirector], kept apart so each file stays readable.
 
 const CHANNEL := "vote"
 const SERVICE := &"dot_vote_director"
@@ -12,18 +12,18 @@ signal vote_opened(options: Array, seconds: float)
 ## Somebody voted. For a live tally.
 signal vote_cast(voter: StringName, choices: Array)
 
-## The live tally, every [member DotVoteRules.announce_interval_sec] seconds.
+## The live tally, every [member GSVoteRules.announce_interval_sec] seconds.
 signal tally_updated(counts: Dictionary)
 
-## The ballot closed. A [constant DotVoteResult.Outcome.RUNOFF] is followed by another
+## The ballot closed. A [constant GSVoteResult.Outcome.RUNOFF] is followed by another
 ## [signal vote_opened]; everything else is final.
-signal vote_closed(result: DotVoteResult)
+signal vote_closed(result: GSVoteResult)
 
 ## Something should be loaded now. [b]The signal a host acts on.[/b]
-signal change_due(id: StringName, choice: DotVoteChoice)
+signal change_due(id: StringName, choice: GSVoteChoice)
 
 ## The source finished applying a change, or failed to.
-signal changed(id: StringName, result: DotResult)
+signal changed(id: StringName, result: GSResult)
 
 ## Passed through from the clock, so a host wires up one object rather than five.
 signal warning(seconds_left: float)
@@ -34,11 +34,11 @@ signal nominated(voter: StringName, id: StringName)
 
 ## A nomination came off the list — withdrawn, replaced, taken onto a ballot, cleared
 ## by a new map, removed by an admin, or its owner left. [param reason] is one of
-## [DotVoteNominations]'s [code]REASON_*[/code].
+## [GSVoteNominations]'s [code]REASON_*[/code].
 signal nomination_removed(voter: StringName, id: StringName, reason: StringName)
 
-## A countdown to a ballot started: [member DotVoteRules.vote_warning_sec], or
-## [member DotVoteRules.runoff_warning_sec] when [param runoff].
+## A countdown to a ballot started: [member GSVoteRules.vote_warning_sec], or
+## [member GSVoteRules.runoff_warning_sec] when [param runoff].
 signal countdown_started(seconds: float, runoff: bool)
 
 ## One second of that countdown. Fires for every whole second from the first down to
@@ -70,7 +70,7 @@ enum NominationState {
 	YES,
 	## Nominations are off, or voting is.
 	DISABLED,
-	## The list is at [member DotVoteRules.nominations_max].
+	## The list is at [member GSVoteRules.nominations_max].
 	FULL,
 	## A ballot is open or about to be; a nomination now would miss it.
 	VOTE_IN_PROGRESS,
@@ -80,7 +80,7 @@ enum NominationState {
 
 @export_group("Wiring")
 
-## Whether to register in [DotRegistry] under [constant SERVICE].
+## Whether to register in [GSRegistry] under [constant SERVICE].
 @export var register_service: bool = true
 
 ## Whether this director asks the source to apply a result.
@@ -92,17 +92,17 @@ enum NominationState {
 ## Whether [method advance] is called automatically from [method _physics_process].
 @export var self_advance: bool = false
 
-var rules: DotVoteRules = null
+var rules: GSVoteRules = null
 
-var source: DotVoteSource = null
+var source: GSVoteSource = null
 
-var history: DotVoteHistory = null
+var history: GSVoteHistory = null
 
-var nominations: DotVoteNominations = null
+var nominations: GSVoteNominations = null
 
-var ballot: DotVoteBallot = null
+var ballot: GSVoteBallot = null
 
-var clock: DotVoteClock = null
+var clock: GSVoteClock = null
 
 var state: State = State.RUNNING
 
@@ -124,7 +124,7 @@ var is_spectator_fn: Callable = Callable()
 var weight_fn: Callable = Callable()
 
 ## Who a voter is: [code]voter -> {"name": String, "avatar": String}[/code], the same
-## shape [method DotVoteBallotView.state_of] takes. Optional; without it, or when it has
+## shape [method GSVoteBallotView.state_of] takes. Optional; without it, or when it has
 ## no name for somebody, a line names the voter by id.
 var people_fn: Callable = Callable()
 
@@ -144,7 +144,7 @@ var round_in_progress_fn: Callable = Callable()
 ## counts. See [method set_hibernating].
 var hibernating: bool = false
 
-## What [constant DotVoteRules.EmptyChoice.RANDOM] draws with. Null makes one, seeded from
+## What [constant GSVoteRules.EmptyChoice.RANDOM] draws with. Null makes one, seeded from
 ## the system's entropy, the first time it is needed.
 var empty_rng: RandomNumberGenerator = null
 
@@ -160,20 +160,20 @@ var _fill_cursor: int = 0
 var _vote_due_pending: bool = false
 
 ## The reason the pending vote is due, kept so the retry says the same thing.
-var _vote_due_reason: StringName = DotVoteClock.REASON_MANUAL
+var _vote_due_reason: StringName = GSVoteClock.REASON_MANUAL
 
 ## Why the ballot now open (or last closed) was opened. Decides whether it was an early
-## vote, and which of [member DotVoteRules.apply] and [member DotVoteRules.rtv_apply]
+## vote, and which of [member GSVoteRules.apply] and [member GSVoteRules.rtv_apply]
 ## its winner waits for.
-var _vote_reason: StringName = DotVoteClock.REASON_MANUAL
+var _vote_reason: StringName = GSVoteClock.REASON_MANUAL
 
-## The moment the pending change waits for, as a [enum DotVoteRules.Apply].
-var _pending_moment: int = DotVoteRules.Apply.END_OF_ROUND
+## The moment the pending change waits for, as a [enum GSVoteRules.Apply].
+var _pending_moment: int = GSVoteRules.Apply.END_OF_ROUND
 
 var _countdown_remaining: float = 0.0
 var _countdown_last: int = 0
 var _countdown_runoff: bool = false
-var _countdown_reason: StringName = DotVoteClock.REASON_MANUAL
+var _countdown_reason: StringName = GSVoteClock.REASON_MANUAL
 var _runoff_ids: Array[StringName] = []
 
 ## Set while [method force_rtv] expires the clock: an admin's "vote now" is never held for
@@ -182,17 +182,17 @@ var _runoff_ids: Array[StringName] = []
 var _forcing: bool = false
 
 ## A ballot is due and is waiting for the round in progress to end, under
-## [constant DotVoteRules.Trigger.ROUND_END]. [member _vote_due_reason] says why it is due.
+## [constant GSVoteRules.Trigger.ROUND_END]. [member _vote_due_reason] says why it is due.
 var _vote_due_at_round_end: bool = false
 
-## Why the clock last ran out, as a [code]DotVoteClock.REASON_*[/code]. Empty while it has
+## Why the clock last ran out, as a [code]GSVoteClock.REASON_*[/code]. Empty while it has
 ## not. Decides whether [method is_finishing_round] applies at all: only a time or score
 ## limit waits for the round, never a rock-the-vote or an admin.
 var _expired_reason: StringName = &""
 
-## Seconds since the clock ran out, for [member DotVoteRules.finish_round_max_sec].
+## Seconds since the clock ran out, for [member GSVoteRules.finish_round_max_sec].
 var _since_expiry: float = 0.0
 
 ## Whether a round has ended since the clock ran out, which is the moment
-## [constant DotVoteRules.TimeUp.FINISH_ROUND] was waiting for.
+## [constant GSVoteRules.TimeUp.FINISH_ROUND] was waiting for.
 var _round_ended_since_expiry: bool = false

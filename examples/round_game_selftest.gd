@@ -1,11 +1,11 @@
 extends Node
 
-## Proves [DotVoteRoundGame], the next-map vote every round-based game had its own copy of: the ballot opens once, in the last round only,
+## Proves [GSVoteRoundGame], the next-map vote every round-based game had its own copy of: the ballot opens once, in the last round only,
 ## applies at the round's end, waits out hibernation, and a game's names (channel, noun, kinds, commands) reach it.
 ## Run: godot --headless --path . res://examples/round_game_selftest.tscn
 
 ## A game's shim: names only.
-class _Game extends DotVoteRoundGame:
+class _Game extends GSVoteRoundGame:
 	func _init() -> void:
 		channel = "toy.vote"
 		noun = "course"
@@ -21,10 +21,10 @@ class _Hooked extends _Game:
 	var ticks := 0
 	var refused: Array = []
 
-	func _apply(id: StringName) -> DotResult:
+	func _apply(id: StringName) -> GSResult:
 		if id == &"bad":
 			refused.append(id)
-			return DotResult.fail(DotError.CODE_STATE, "cannot play it")
+			return GSResult.fail(GSError.CODE_STATE, "cannot play it")
 
 		return super._apply(id)
 
@@ -43,7 +43,7 @@ var _failed := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -61,12 +61,12 @@ func _rig(maps: Array, last_round := true) -> Array:
 	var applied: Array = []
 	var voters: Array = [&"a", &"b", &"c"]
 	game.maps_fn = func() -> Array: return maps
-	game.apply_fn = func(id: StringName) -> DotResult:
+	game.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	game.voters_fn = func() -> Array: return voters
 	game.due_fn = func() -> bool: return last_round
-	game.content_index = DotContentIndex.new()
+	game.content_index = GSContentIndex.new()
 	add_child(game)
 	var ready := game.setup()
 	_check(ready.ok, "setup succeeds")
@@ -75,15 +75,15 @@ func _rig(maps: Array, last_round := true) -> Array:
 
 
 func _run() -> void:
-	print("DotVoteRoundGame self-test")
+	print("GSVoteRoundGame self-test")
 	var maps := [["m1", "One"], ["m2", "Two"], ["m3", "Three"]]
 
 	var rig := _rig(maps)
-	var game: DotVoteRoundGame = rig[0]
+	var game: GSVoteRoundGame = rig[0]
 	var applied: Array = rig[1]
 	_check(game.feed.title == "Vote for the next course" and game.feed.command == "pick", "the game's noun and command name reach the feed")
 	_check(game.source.entries.size() == 3, "the host's maps are the ballot's entries")
-	_check(game.director.rules.trigger == DotVoteRules.Trigger.MANUAL and game.director.rules.apply == DotVoteRules.Apply.END_OF_ROUND, "defaults: opened by the game, applied at the round's end")
+	_check(game.director.rules.trigger == GSVoteRules.Trigger.MANUAL and game.director.rules.apply == GSVoteRules.Apply.END_OF_ROUND, "defaults: opened by the game, applied at the round's end")
 
 	game.advance(game.open_after_sec - 1.0)
 	_check(not game.is_voting(), "no ballot before open_after_sec")
@@ -154,11 +154,11 @@ func _test_hooks() -> void:
 	var hooked := _Hooked.new()
 	var hooked_applied: Array = []
 	hooked.maps_fn = func() -> Array: return [["m1", "One"], ["m2", "Two"], ["bad", "Bad"]]
-	hooked.apply_fn = func(id: StringName) -> DotResult:
+	hooked.apply_fn = func(id: StringName) -> GSResult:
 		hooked_applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 	hooked.voters_fn = func() -> Array: return [&"a", &"b"]
-	hooked.content_index = DotContentIndex.new()
+	hooked.content_index = GSContentIndex.new()
 	add_child(hooked)
 	var _ready := hooked.setup()
 	hooked.note_map(&"m1")
@@ -173,6 +173,6 @@ func _test_hooks() -> void:
 	hooked.held = false
 	hooked.advance(hooked.open_after_sec + 1.0)
 	_check(hooked.is_voting(), "the ballot opens once _ballot_may_open allows")
-	var refusal := hooked.source.apply_fn.call(&"bad") as DotResult
-	var accepted := hooked.source.apply_fn.call(&"m2") as DotResult
+	var refusal := hooked.source.apply_fn.call(&"bad") as GSResult
+	var accepted := hooked.source.apply_fn.call(&"m2") as GSResult
 	_check(not refusal.ok and accepted.ok and hooked_applied == [&"m2"], "_apply can refuse an id before apply_fn")

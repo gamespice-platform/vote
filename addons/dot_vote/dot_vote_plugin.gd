@@ -8,7 +8,7 @@ const _ICON := "res://addons/dot_vote/icon_placeholder.svg"
 
 const _TYPES := [
 	[
-		"DotVoteDirector",
+		"GSVoteDirector",
 		"Node",
 		"res://addons/dot_vote/runtime/dot_vote_director.gd",
 	],

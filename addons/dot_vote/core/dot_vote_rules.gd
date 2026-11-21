@@ -1,9 +1,9 @@
 @tool
-class_name DotVoteRules
+class_name GSVoteRules
 extends "res://addons/dot_vote/core/dot_vote_rules_settings.gd"
 
-## Every policy decision this addon makes, in one place: [DotVoteBallot], [DotVoteClock] and [DotVoteNominations] hold state, these fields say what they do.
-## A [DotConfig], so it layers as everywhere: defaults < vote.json / vote.yml < server vote.yml < DOT_VOTE_* < --vote-*. Enums are written by name in files ([method apply_dictionary] translates).
+## Every policy decision this addon makes, in one place: [GSVoteBallot], [GSVoteClock] and [GSVoteNominations] hold state, these fields say what they do.
+## A [GSConfig], so it layers as everywhere: defaults < vote.json / vote.yml < server vote.yml < DOT_VOTE_* < --vote-*. Enums are written by name in files ([method apply_dictionary] translates).
 ## The defaults run a public server untouched: thirty minutes, rock the vote at 60% of two or more, six options with four kept for nominations, plurality.
 
 
@@ -68,7 +68,7 @@ func _translate_enums(d: Dictionary) -> Dictionary:
 					out[raw_key] = int(table[wanted])
 					continue
 
-				DotLog.warn(RULES_CHANNEL, "unknown value for an enum setting", {
+				GSLog.warn(RULES_CHANNEL, "unknown value for an enum setting", {
 					"key": key,
 					"value": text,
 					"known": ", ".join(enum_names_for(key)),
@@ -121,7 +121,7 @@ func warn_marks() -> PackedFloat32Array:
 			continue
 
 		if not text.is_valid_float():
-			DotLog.warn(RULES_CHANNEL, "ignoring an unreadable warning mark", {
+			GSLog.warn(RULES_CHANNEL, "ignoring an unreadable warning mark", {
 				"value": text
 			})
 			continue
@@ -175,7 +175,7 @@ func marked_name(display: String, official: bool) -> String:
 
 ## Layers a game's own vote configuration onto these rules: code defaults < overlay (game metadata) < file < DOT_VOTE_* < --vote-*.
 ## A result that does not validate is refused as a whole and the defaults are put back, since rules that contradict each other mean a vote that never opens.
-func layer_over_defaults(file_path: String, overlay: Dictionary = {}) -> DotResult:
+func layer_over_defaults(file_path: String, overlay: Dictionary = {}) -> GSResult:
 	var defaults := to_dictionary()
 
 	if not overlay.is_empty():
@@ -199,12 +199,12 @@ func layer_over_defaults(file_path: String, overlay: Dictionary = {}) -> DotResu
 
 ## Applies [param file_name] from `cfg/addons/dot_vote/`, then the operator's `cfg/server/addons/dot_vote/`.
 ## A flat [param legacy_dir]/[param file_name] is still read (one WARN) while no new copy exists.
-func apply_cfg_file(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") -> DotResult:
-	return DotAddonConfig.apply_file(CFG_ADDON, file_name, legacy_dir, apply_dictionary)
+func apply_cfg_file(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") -> GSResult:
+	return GSAddonConfig.apply_file(CFG_ADDON, file_name, legacy_dir, apply_dictionary)
 
 
-## [method apply_cfg_file], then `DOT_VOTE_*`, `--vote-*` and validation: [method DotConfig.load_layered] for the yml layout.
-func load_cfg(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") -> DotResult:
+## [method apply_cfg_file], then `DOT_VOTE_*`, `--vote-*` and validation: [method GSConfig.load_layered] for the yml layout.
+func load_cfg(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") -> GSResult:
 	unknown_keys = PackedStringArray()
 	var file_res := apply_cfg_file(file_name, legacy_dir)
 	if not file_res.ok:
@@ -214,7 +214,7 @@ func load_cfg(file_name: String = "vote.yml", legacy_dir: String = "res://cfg") 
 	var valid := validate()
 	if not valid.ok:
 		return valid.wrap("Configuration is invalid.")
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 ## Takes out what a host cannot drive, and says what it took.
@@ -247,31 +247,31 @@ func drop_unfed(feeds_rounds: bool, feeds_score: bool) -> PackedStringArray:
 	return dropped
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	var bad := _validate_sizes()
 	if bad == null:
 		bad = _validate_triggers()
-	return bad if bad != null else DotResult.success(true)
+	return bad if bad != null else GSResult.success(true)
 
 
 ## The first size or ballot-shape problem as a failure, or null.
-func _validate_sizes() -> DotResult:
+func _validate_sizes() -> GSResult:
 	if max_options < 2:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "A ballot needs at least two options."
+		return GSResult.fail(
+			GSError.CODE_INVALID, "A ballot needs at least two options."
 		)
 
 	if nomination_slots > max_options:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"nomination_slots (%d) exceeds max_options (%d)."
 				% [nomination_slots, max_options],
 			"every place on the ballot would be reserved and nothing would be filled in"
 		)
 
 	if runoff_options > max_options:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"runoff_options (%d) exceeds max_options (%d)."
 				% [runoff_options, max_options]
 		)
@@ -280,13 +280,13 @@ func _validate_sizes() -> DotResult:
 
 
 ## The first trigger or lead problem as a failure, or null.
-func _validate_triggers() -> DotResult:
+func _validate_triggers() -> GSResult:
 	# 0 with a rock-the-vote is "around the clock until the players ask": a real server,
 	# and what a choice's own time_limit_sec: 0 already meant. Only with nothing at all
 	# that could end it is it a configuration that cannot work.
 	if trigger == Trigger.TIME_LIMIT and duration_sec <= 0.0 and not rtv_enabled:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"trigger is time_limit but duration_sec is 0 and rock-the-vote is off.",
 			"nothing would ever start a vote; set a duration or turn rtv_enabled on"
 		)
@@ -297,58 +297,58 @@ func _validate_triggers() -> DotResult:
 		trigger == Trigger.ROUND_END
 		and round_limit <= 0 and duration_sec <= 0.0 and score_limit <= 0
 	):
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"trigger is round_end but there is no round, time or score limit.",
 			"nothing would ever start a vote"
 		)
 
 	if vote_lead_sec > 0.0 and duration_sec > 0.0 and vote_lead_sec >= duration_sec:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"vote_lead_sec (%.0f) is not less than duration_sec (%.0f)."
 				% [vote_lead_sec, duration_sec],
 			"the ballot would open the instant the choice started"
 		)
 
 	if rtv_delay_sec > 0.0 and duration_sec > 0.0 and rtv_delay_sec >= duration_sec:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"rtv_delay_sec (%.0f) is not less than duration_sec (%.0f)."
 				% [rtv_delay_sec, duration_sec],
 			"rocking the vote would be refused for the whole of every map"
 		)
 
 	if not rtv_enabled and trigger == Trigger.RTV_ONLY:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"trigger is rtv_only but rtv_enabled is off.",
 			"nothing could ever start a vote"
 		)
 
 	if max_runoffs > 0 and tie_break == TieBreak.RUNOFF and runoff_options < 2:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "A runoff needs at least two options."
+		return GSResult.fail(
+			GSError.CODE_INVALID, "A runoff needs at least two options."
 		)
 
 	if trigger == Trigger.SCORE_LIMIT and score_limit <= 0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"trigger is score_limit but score_limit is 0.",
 			"nothing would ever start a vote"
 		)
 
 	if score_limit > 0 and vote_lead_score >= score_limit:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"vote_lead_score (%d) is not less than score_limit (%d)."
 				% [vote_lead_score, score_limit],
 			"the ballot would open at the first point scored"
 		)
 
 	if vote_lead_fraction >= 1.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"vote_lead_fraction must be less than 1.",
 			"the ballot would open the instant the choice started"
 		)
@@ -356,7 +356,7 @@ func _validate_triggers() -> DotResult:
 	return null
 
 
-## A short human summary. [b]Not [code]describe_lines[/code][/b], which [DotConfig]
+## A short human summary. [b]Not [code]describe_lines[/code][/b], which [GSConfig]
 ## already defines as the full dump of every key — both are worth having, and a
 ## console command that showed only one of them would show the wrong one.
 func summary_lines() -> PackedStringArray:

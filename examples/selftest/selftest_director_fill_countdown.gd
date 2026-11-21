@@ -3,22 +3,22 @@ extends "res://examples/selftest/selftest_counting_clock_rtv.gd"
 ## Selftest sections: director end to end, fill modes, apply moments, chooser settings and countdown.
 
 var _v_director_end_to_end_applied: Array
-var _v_director_end_to_end_rules: DotVoteRules
-var _v_director_end_to_end_director: DotVoteDirector
+var _v_director_end_to_end_rules: GSVoteRules
+var _v_director_end_to_end_director: GSVoteDirector
 var _v_director_end_to_end_opened: Array
 var _v_director_end_to_end_changed: Array
-var _v_fill_modes_source: DotVoteListSource
-var _v_fill_modes_director: DotVoteDirector
-var _v_apply_moments_director: DotVoteDirector
-var _v_apply_moments_delayed: DotVoteRules
-var _v_chooser_settings_game: DotVoteRules
-var _v_chooser_settings_layered: DotResult
-var _v_countdown_rules: DotVoteRules
-var _v_countdown_director: DotVoteDirector
+var _v_fill_modes_source: GSVoteListSource
+var _v_fill_modes_director: GSVoteDirector
+var _v_apply_moments_director: GSVoteDirector
+var _v_apply_moments_delayed: GSVoteRules
+var _v_chooser_settings_game: GSVoteRules
+var _v_chooser_settings_layered: GSResult
+var _v_countdown_rules: GSVoteRules
+var _v_countdown_director: GSVoteDirector
 var _v_countdown_ticks: Array
 var _v_countdown_cues: Array
 var _v_countdown_said: Array
-var _v_countdown_stalled: DotVoteDirector
+var _v_countdown_stalled: GSVoteDirector
 var _v_countdown_stalled_ticks: Array
 
 
@@ -26,10 +26,10 @@ func _test_director_end_to_end() -> void:
 	_section("A whole vote: nominate, rock it, count it, and change what is running")
 
 	_v_director_end_to_end_applied = []
-	var source := DotVoteListSource.of(_choices(["alpha", "bravo", "charlie", "delta"]))
-	source.apply_fn = func(id: StringName) -> DotResult:
+	var source := GSVoteListSource.of(_choices(["alpha", "bravo", "charlie", "delta"]))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		_v_director_end_to_end_applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	_v_director_end_to_end_rules = _rules()
 	_v_director_end_to_end_rules.duration_sec = 100.0
@@ -38,7 +38,7 @@ func _test_director_end_to_end() -> void:
 	_v_director_end_to_end_rules.include_extend = false
 	_v_director_end_to_end_rules.close_when_all_voted = false
 	_v_director_end_to_end_rules.rtv_delay_sec = 0.0
-	_v_director_end_to_end_rules.apply = DotVoteRules.Apply.IMMEDIATE
+	_v_director_end_to_end_rules.apply = GSVoteRules.Apply.IMMEDIATE
 
 	_v_director_end_to_end_director = _make_director(_v_director_end_to_end_rules, source)
 
@@ -47,7 +47,7 @@ func _test_director_end_to_end() -> void:
 	_v_director_end_to_end_director.vote_opened.connect(func(options: Array, _s: float) -> void:
 		_v_director_end_to_end_opened.append(options)
 	)
-	_v_director_end_to_end_director.change_due.connect(func(id: StringName, _c: DotVoteChoice) -> void:
+	_v_director_end_to_end_director.change_due.connect(func(id: StringName, _c: GSVoteChoice) -> void:
 		_v_director_end_to_end_changed.append(id)
 	)
 
@@ -166,10 +166,10 @@ func _test_director_end_to_end_3() -> void:
 func _test_fill_modes() -> void:
 	_section("Five ways to fill a ballot, and each fills it differently")
 
-	_v_fill_modes_source = DotVoteListSource.of(_choices(["a", "b", "c", "d", "e", "f"]))
+	_v_fill_modes_source = GSVoteListSource.of(_choices(["a", "b", "c", "d", "e", "f"]))
 
 	var sequential := _rules()
-	sequential.fill = DotVoteRules.Fill.SEQUENTIAL
+	sequential.fill = GSVoteRules.Fill.SEQUENTIAL
 	sequential.max_options = 2
 	sequential.nomination_slots = 0
 	sequential.cooldown = 0
@@ -192,7 +192,7 @@ func _test_fill_modes() -> void:
 		"a cursor that never advances is a rotation that offers the same two for ever"
 	)
 
-	_v_fill_modes_director.rules.fill = DotVoteRules.Fill.LEAST_RECENTLY_PLAYED
+	_v_fill_modes_director.rules.fill = GSVoteRules.Fill.LEAST_RECENTLY_PLAYED
 	_v_fill_modes_director.history.note_played(&"a", 0.0)
 	_v_fill_modes_director.history.note_played(&"b", 0.0)
 	_v_fill_modes_director.rules.cooldown = 0
@@ -203,7 +203,7 @@ func _test_fill_modes() -> void:
 		"LEAST_RECENTLY_PLAYED puts the most recently played last (%s)" % by_age[0].id
 	)
 
-	_v_fill_modes_director.rules.fill = DotVoteRules.Fill.WEIGHTED
+	_v_fill_modes_director.rules.fill = GSVoteRules.Fill.WEIGHTED
 	_v_fill_modes_director.rules.max_options = 1
 
 	for choice in _v_fill_modes_source.entries:
@@ -225,7 +225,7 @@ func _test_fill_modes() -> void:
 
 
 func _test_fill_modes_2() -> void:
-	_v_fill_modes_director.rules.fill = DotVoteRules.Fill.MOST_NOMINATED
+	_v_fill_modes_director.rules.fill = GSVoteRules.Fill.MOST_NOMINATED
 	_v_fill_modes_director.rules.max_options = 3
 	_v_fill_modes_director.rules.nomination_slots = 0
 	_check(
@@ -247,7 +247,7 @@ func _test_fill_modes_2() -> void:
 	_v_fill_modes_director.nominations.clear()
 
 	# Everything on cooldown must not produce an empty ballot.
-	_v_fill_modes_director.rules.fill = DotVoteRules.Fill.RANDOM
+	_v_fill_modes_director.rules.fill = GSVoteRules.Fill.RANDOM
 	_v_fill_modes_director.rules.cooldown = 64
 	_v_fill_modes_director.rules.cooldown_max_fraction = 1.0
 	_v_fill_modes_director.rules.max_options = 4
@@ -287,17 +287,17 @@ func _test_apply_moments() -> void:
 	_section("A winner waits for the moment the rules asked for")
 
 	var applied := []
-	var source := DotVoteListSource.of(_choices(["a", "b"]))
-	source.apply_fn = func(id: StringName) -> DotResult:
+	var source := GSVoteListSource.of(_choices(["a", "b"]))
+	source.apply_fn = func(id: StringName) -> GSResult:
 		applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	var rules := _rules()
 	rules.duration_sec = 100.0
 	rules.vote_lead_sec = 40.0
 	rules.vote_duration_sec = 5.0
 	rules.include_extend = false
-	rules.apply = DotVoteRules.Apply.END_OF_TIME
+	rules.apply = GSVoteRules.Apply.END_OF_TIME
 	rules.cooldown = 0
 
 	_v_apply_moments_director = _make_director(rules, source)
@@ -334,7 +334,7 @@ func _test_apply_moments() -> void:
 	# The delay a player reads the result in.
 	_v_apply_moments_delayed = _rules()
 	_v_apply_moments_delayed.apply_delay_sec = 5.0
-	_v_apply_moments_delayed.apply = DotVoteRules.Apply.IMMEDIATE
+	_v_apply_moments_delayed.apply = GSVoteRules.Apply.IMMEDIATE
 	_v_apply_moments_delayed.include_extend = false
 	_v_apply_moments_delayed.vote_duration_sec = 1.0
 	_v_apply_moments_delayed.duration_sec = 600.0
@@ -345,10 +345,10 @@ func _test_apply_moments() -> void:
 
 func _test_apply_moments_2() -> void:
 	var delayed_applied := []
-	var delayed_source := DotVoteListSource.of(_choices(["a", "b"]))
-	delayed_source.apply_fn = func(id: StringName) -> DotResult:
+	var delayed_source := GSVoteListSource.of(_choices(["a", "b"]))
+	delayed_source.apply_fn = func(id: StringName) -> GSResult:
 		delayed_applied.append(id)
-		return DotResult.success(id)
+		return GSResult.success(id)
 
 	var slow := _make_director(_v_apply_moments_delayed, delayed_source)
 	slow.begin(&"a")
@@ -365,22 +365,22 @@ func _test_apply_moments_2() -> void:
 	_check(delayed_applied.size() == 1, "and then it happens")
 
 	# Advisory mode: everything runs, nothing changes. What a client does.
-	var advisory_source := DotVoteListSource.of(_choices(["a", "b"]))
-	advisory_source.apply_fn = func(id: StringName) -> DotResult:
-		return DotResult.success(id)
+	var advisory_source := GSVoteListSource.of(_choices(["a", "b"]))
+	advisory_source.apply_fn = func(id: StringName) -> GSResult:
+		return GSResult.success(id)
 
 	var advisory_rules := _rules()
 	advisory_rules.include_extend = false
 	advisory_rules.vote_duration_sec = 1.0
 	advisory_rules.duration_sec = 600.0
 	advisory_rules.cooldown = 0
-	advisory_rules.apply = DotVoteRules.Apply.IMMEDIATE
+	advisory_rules.apply = GSVoteRules.Apply.IMMEDIATE
 
 	var advisory := _make_director(advisory_rules, advisory_source)
 	advisory.auto_apply = false
 
 	var told := []
-	advisory.change_due.connect(func(id: StringName, _c: DotVoteChoice) -> void:
+	advisory.change_due.connect(func(id: StringName, _c: GSVoteChoice) -> void:
 		told.append(id)
 	)
 
@@ -410,7 +410,7 @@ func _test_apply_moments_2() -> void:
 func _test_chooser_settings() -> void:
 	_section("The map-chooser settings layer, validate and format like every other")
 
-	var rules := DotVoteRules.new()
+	var rules := GSVoteRules.new()
 	rules.apply_dictionary({
 		"on_no_votes": "random",
 		"rtv_apply": "end_of_time",
@@ -420,9 +420,9 @@ func _test_chooser_settings() -> void:
 	}, "file")
 
 	_check(
-		rules.on_no_votes == DotVoteRules.NoVotes.RANDOM
-			and rules.rtv_apply == DotVoteRules.Apply.END_OF_TIME
-			and rules.rtv_after_decided == DotVoteRules.RtvAfterDecided.DENY,
+		rules.on_no_votes == GSVoteRules.NoVotes.RANDOM
+			and rules.rtv_apply == GSVoteRules.Apply.END_OF_TIME
+			and rules.rtv_after_decided == GSVoteRules.RtvAfterDecided.DENY,
 		"the new enums are written by name like the old ones"
 	)
 	_check(
@@ -430,15 +430,15 @@ func _test_chooser_settings() -> void:
 		"and the switch and the countdown read from text, as env and argv deliver them"
 	)
 
-	var no_score := DotVoteRules.new()
-	no_score.trigger = DotVoteRules.Trigger.SCORE_LIMIT
+	var no_score := GSVoteRules.new()
+	no_score.trigger = GSVoteRules.Trigger.SCORE_LIMIT
 	_check(
 		not no_score.validate().ok,
 		"a score-limit trigger with no score limit is refused",
 		"nothing would ever start a vote"
 	)
 
-	var lead := DotVoteRules.new()
+	var lead := GSVoteRules.new()
 	lead.score_limit = 5
 	lead.vote_lead_score = 5
 	_check(
@@ -447,17 +447,17 @@ func _test_chooser_settings() -> void:
 		"the ballot would open at the first point"
 	)
 
-	var whole := DotVoteRules.new()
+	var whole := GSVoteRules.new()
 	whole.vote_lead_fraction = 1.0
 	_check(not whole.validate().ok, "and so is a lead fraction of the whole limit")
 
 	# The layering a game's map vote uses: code defaults < the running game's metadata
-	# < a file < DOT_VOTE_* < --vote-*. DotConfig.load_layered with one layer in front.
+	# < a file < DOT_VOTE_* < --vote-*. GSConfig.load_layered with one layer in front.
 	DirAccess.make_dir_recursive_absolute(DATA)
 	var path := DATA.path_join("map_vote.json")
-	DotPaths.write_json(path, {"max_extends": 1, "method": "instant_runoff"})
+	GSPaths.write_json(path, {"max_extends": 1, "method": "instant_runoff"})
 
-	_v_chooser_settings_game = DotVoteRules.new()
+	_v_chooser_settings_game = GSVoteRules.new()
 	_v_chooser_settings_game.extend_seconds = 300.0
 	_v_chooser_settings_game.max_extends = 5
 
@@ -475,7 +475,7 @@ func _test_chooser_settings_2() -> void:
 		"the game's metadata overrides its code (%.0f)" % _v_chooser_settings_game.extend_seconds
 	)
 	_check(
-		_v_chooser_settings_game.max_extends == 1 and _v_chooser_settings_game.method == DotVoteRules.Method.INSTANT_RUNOFF,
+		_v_chooser_settings_game.max_extends == 1 and _v_chooser_settings_game.method == GSVoteRules.Method.INSTANT_RUNOFF,
 		"the file overrides the metadata (%d)" % _v_chooser_settings_game.max_extends,
 		"what an operator writes beside the server is later than what ships beside the game"
 	)
@@ -485,21 +485,21 @@ func _test_chooser_settings_2() -> void:
 	)
 
 	var broken_path := DATA.path_join("broken_vote.json")
-	DotPaths.write_json(broken_path, {"trigger": "score_limit", "max_extends": 7})
+	GSPaths.write_json(broken_path, {"trigger": "score_limit", "max_extends": 7})
 
-	var guarded := DotVoteRules.new()
+	var guarded := GSVoteRules.new()
 	guarded.max_extends = 3
 	var refused := guarded.layer_over_defaults(broken_path)
 
 	_check(not refused.ok, "a file whose settings contradict each other is refused")
 	_check(
-		guarded.max_extends == 3 and guarded.trigger == DotVoteRules.Trigger.TIME_LIMIT,
+		guarded.max_extends == 3 and guarded.trigger == GSVoteRules.Trigger.TIME_LIMIT,
 		"and the game keeps its own defaults rather than half of the file (%d)"
 			% guarded.max_extends,
 		"a vote whose rules contradict each other is a vote that never opens"
 	)
 
-	var marked := DotVoteRules.new()
+	var marked := GSVoteRules.new()
 	_check(
 		marked.marked_name("Kitsune", false) == "*Kitsune"
 			and marked.marked_name("Kitsune", true) == "Kitsune",
@@ -519,14 +519,14 @@ func _test_chooser_settings_2() -> void:
 		"GDScript's % hands back the unformatted string on a bad format, silently"
 	)
 
-	var cues := DotVoteRules.new()
+	var cues := GSVoteRules.new()
 	cues.cue_countdown = "vote.count.%d"
 	_check(
 		cues.countdown_cue_id(3) == "vote.count.3" and cues.countdown_cue_id(7) == "",
 		"a countdown cue is templated, and only the listed seconds have one"
 	)
 	_check(
-		DotVoteRules.new().countdown_cue_id(3) == "",
+		GSVoteRules.new().countdown_cue_id(3) == "",
 		"and with no cue configured nothing is asked for"
 	)
 
@@ -536,7 +536,7 @@ func _test_chooser_settings_2() -> void:
 func _test_countdown() -> void:
 	_section("A ballot can be counted down to, out loud and by the second")
 
-	var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
+	var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
 	_v_countdown_rules = _rules()
 	_v_countdown_rules.vote_warning_sec = 5.0
 	_v_countdown_rules.include_extend = false
@@ -573,7 +573,7 @@ func _test_countdown() -> void:
 	)
 	_check(
 		not _v_countdown_director.nominate(&"p1", &"b").ok
-			and _v_countdown_director.nomination_state() == DotVoteDirector.NominationState.VOTE_IN_PROGRESS,
+			and _v_countdown_director.nomination_state() == GSVoteDirector.NominationState.VOTE_IN_PROGRESS,
 		"a nomination during the countdown is refused",
 		"it would miss the ballot it is counting down to"
 	)
@@ -618,7 +618,7 @@ func _test_countdown_2() -> void:
 	_check(_v_countdown_cues.has("vote.end"), "and closing the ballot asks for its cue")
 
 	# A stall must not skip a number.
-	_v_countdown_stalled = _make_director(_v_countdown_rules, DotVoteListSource.of(_choices(["a", "b"])))
+	_v_countdown_stalled = _make_director(_v_countdown_rules, GSVoteListSource.of(_choices(["a", "b"])))
 	_v_countdown_stalled.begin(&"a")
 	_v_countdown_stalled_ticks = []
 	_v_countdown_stalled.countdown_tick.connect(
@@ -641,14 +641,14 @@ func _test_countdown_3() -> void:
 
 	# The runoff has its own, shorter countdown.
 	var runoff_rules := _rules()
-	runoff_rules.method = DotVoteRules.Method.MAJORITY_RUNOFF
+	runoff_rules.method = GSVoteRules.Method.MAJORITY_RUNOFF
 	runoff_rules.max_runoffs = 1
 	runoff_rules.include_extend = false
 	runoff_rules.close_when_all_voted = false
 	runoff_rules.cooldown = 0
 	runoff_rules.runoff_warning_sec = 2.0
 
-	var runoff := _make_director(runoff_rules, DotVoteListSource.of(_choices(["a", "b", "c"])))
+	var runoff := _make_director(runoff_rules, GSVoteListSource.of(_choices(["a", "b", "c"])))
 	runoff.begin(&"")
 	var runoff_started := []
 	runoff.countdown_started.connect(

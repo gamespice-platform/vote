@@ -5,7 +5,7 @@ extends "res://examples/selftest/selftest_base.gd"
 
 func _test_subscribed_maps() -> void:
 	_section("Subscribed maps join a list source for the current session only")
-	var index := DotContentIndex.new()
+	var index := GSContentIndex.new()
 	var pack := index.add_pack({
 		"content_id": "someone/surf-pack", "version": "1.0.0", "prefix": "res://x/",
 		"session": "solo", "source": "subscription",
@@ -18,8 +18,8 @@ func _test_subscribed_maps() -> void:
 	})
 	_check(pack.ok, "the fixture pack is indexed")
 
-	var source := DotVoteListSource.new()
-	source.add(DotVoteChoice.of(&"own_map", "Own Map"))
+	var source := GSVoteListSource.new()
+	source.add(GSVoteChoice.of(&"own_map", "Own Map"))
 	_check(source.ids() == [&"own_map"], "a list that never opted in offers only its own")
 
 	source.follow_content(index, PackedStringArray(["*"]))
@@ -30,7 +30,7 @@ func _test_subscribed_maps() -> void:
 		"and the existing id wins, bare")
 	_check(source.ids().count(&"own_map") == 1, "a clashing id is offered once")
 
-	var director := _make_director(DotVoteRules.new(), source)
+	var director := _make_director(GSVoteRules.new(), source)
 	_check(director.ballot_name(source.find(&"surf_new")) == "Surf New [Surf Pack]",
 		"a ballot prints the pack name")
 	director.queue_free()
@@ -41,22 +41,22 @@ func _test_subscribed_maps() -> void:
 	_check(source.ids() == [&"own_map"], "no accepted kinds means none")
 
 	source.follow_content(index, PackedStringArray(["*"]))
-	index.set_session(DotContentIndex.SESSION_ONLINE)
+	index.set_session(GSContentIndex.SESSION_ONLINE)
 	_check(source.ids() == [&"own_map"], "online: no solo entry is ever offered")
-	index.set_session(DotContentIndex.SESSION_SOLO)
+	index.set_session(GSContentIndex.SESSION_SOLO)
 	_check(source.has(&"surf_new"), "back in solo they return")
 
-	index.tag_pack(&"someone/surf-pack", "1.0.0", DotContentIndex.SESSION_ONLINE)
-	index.set_session(DotContentIndex.SESSION_ONLINE)
+	index.tag_pack(&"someone/surf-pack", "1.0.0", GSContentIndex.SESSION_ONLINE)
+	index.set_session(GSContentIndex.SESSION_ONLINE)
 	_check(source.has(&"surf_new"), "a pack a server also requires is offered online")
-	index.set_session(DotContentIndex.SESSION_SOLO)
+	index.set_session(GSContentIndex.SESSION_SOLO)
 
 	# The rotation filter and order cover the merged maps as they do the game's own.
 	var listed := {&"own_map": true, &"bhop_new": true}
 	source.in_rotation_fn = func(id: StringName) -> bool: return listed.has(id)
 	source.rotation_order_fn = func() -> Array: return [&"bhop_new", &"own_map"]
 	_check(source.ids() == [&"bhop_new", &"own_map"], "an unlisted pack map is off the list; the written order wins", str(source.ids()))
-	var rot_director := _make_director(DotVoteRules.new(), source)
+	var rot_director := _make_director(GSVoteRules.new(), source)
 	rot_director.begin(&"own_map")
 	_check(not rot_director.nominate(&"u1", &"surf_new").ok, "nominate refuses a pack map outside the rotation")
 	_check(rot_director.nominate(&"u1", &"bhop_new").ok, "and takes one inside it")
@@ -77,7 +77,7 @@ func _test_subscribed_maps() -> void:
 
 func _test_describe() -> void:
 	_section("The feed and the commands say what they are wired to")
-	var feed := DotVoteBallotFeed.new()
+	var feed := GSVoteBallotFeed.new()
 	var d := feed.describe()
 	_check(not bool(d["can_send"]) and not bool(d["director"]), "an unwired feed says it cannot send")
 	_check(not bool(d["sent_anything"]), "and that it has sent nothing")
@@ -85,7 +85,7 @@ func _test_describe() -> void:
 	feed.title = "Pick"
 	d = feed.describe()
 	_check(bool(d["can_send"]) and d["title"] == "Pick", "a wired feed reports its sender and title")
-	var commands := DotVoteCommands.new()
+	var commands := GSVoteCommands.new()
 	commands.prefix = "!"
 	d = commands.describe()
 	_check(d["prefix"] == "!" and not bool(d["director"]), "the commands report their prefix and a missing director")
@@ -99,61 +99,61 @@ func _test_cfg_layout() -> void:
 	var legacy := DATA.path_join("legacy_cfg")
 	var addon_dir := "user://cfg/addons/dot_vote"
 	var server_dir := "user://cfg/server/addons/dot_vote"
-	DotPaths.remove_tree(addon_dir)
-	DotPaths.remove_tree(server_dir)
-	DotCfgLegacy.reset()
+	GSPaths.remove_tree(addon_dir)
+	GSPaths.remove_tree(server_dir)
+	GSCfgLegacy.reset()
 
 	_write_text(legacy.path_join("vote.yml"), "duration_sec: 900\nrtv_fraction: 0.4\n")
-	var rules := DotVoteRules.new()
+	var rules := GSVoteRules.new()
 	var res := rules.load_cfg("vote.yml", legacy)
 	_check(res.ok and is_equal_approx(rules.duration_sec, 900.0), "only the flat file: it is still read")
-	_check(DotCfgLegacy.warned_count() == 1, "and warned once")
-	DotVoteRules.new().load_cfg("vote.yml", legacy)
-	_check(DotCfgLegacy.warned_count() == 1, "a second load does not warn again")
+	_check(GSCfgLegacy.warned_count() == 1, "and warned once")
+	GSVoteRules.new().load_cfg("vote.yml", legacy)
+	_check(GSCfgLegacy.warned_count() == 1, "a second load does not warn again")
 
 	_write_text(addon_dir.path_join("vote.yml"), "duration_sec: 1200\n")
-	rules = DotVoteRules.new()
+	rules = GSVoteRules.new()
 	res = rules.load_cfg("vote.yml", legacy)
 	_check(
 		res.ok and is_equal_approx(rules.duration_sec, 1200.0),
 		"the new path wins over the flat file"
 	)
 	_check(
-		is_equal_approx(rules.rtv_fraction, DotVoteRules.new().rtv_fraction),
+		is_equal_approx(rules.rtv_fraction, GSVoteRules.new().rtv_fraction),
 		"and the two are never merged"
 	)
 
 	_write_text(server_dir.path_join("vote.yml"), "duration_sec: 1500\n")
-	rules = DotVoteRules.new()
+	rules = GSVoteRules.new()
 	res = rules.load_cfg("vote.yml", legacy)
 	_check(res.ok and is_equal_approx(rules.duration_sec, 1500.0), "the operator's server layer wins")
 
 	_write_text(addon_dir.path_join("vote.yml"), "duration_sec: 1200\nrtv_fraction: 0.5\n")
-	rules = DotVoteRules.new()
+	rules = GSVoteRules.new()
 	rules.load_cfg("vote.yml", legacy)
 	_check(is_equal_approx(rules.rtv_fraction, 0.5), "a key only the addon layer sets still applies")
 
-	DotPaths.remove_tree(addon_dir)
-	DotPaths.remove_tree(server_dir)
-	DotPaths.remove_tree(legacy)
-	DotCfgLegacy.reset()
+	GSPaths.remove_tree(addon_dir)
+	GSPaths.remove_tree(server_dir)
+	GSPaths.remove_tree(legacy)
+	GSCfgLegacy.reset()
 	_write_text("user://cfg/server/dot_vote/vote.yml", "duration_sec: 1700\n")
-	rules = DotVoteRules.new()
+	rules = GSVoteRules.new()
 	res = rules.load_cfg("vote.yml", legacy)
 	_check(res.ok and is_equal_approx(rules.duration_sec, 1700.0), "the old cfg/server/dot_vote/ still loads")
-	_check(DotCfgLegacy.warned_count() == 1, "and warns once")
-	DotPaths.remove_tree("user://cfg/server/dot_vote")
-	DotCfgLegacy.reset()
+	_check(GSCfgLegacy.warned_count() == 1, "and warns once")
+	GSPaths.remove_tree("user://cfg/server/dot_vote")
+	GSCfgLegacy.reset()
 	_done()
 
 
 func _test_rules_validate() -> void:
 	_section("A configuration that could not work is refused at boot")
 
-	var rules := DotVoteRules.new()
+	var rules := GSVoteRules.new()
 	_check(rules.validate().ok, "the shipped defaults validate")
 
-	var reserved := DotVoteRules.new()
+	var reserved := GSVoteRules.new()
 	reserved.max_options = 4
 	reserved.nomination_slots = 6
 	_check(
@@ -162,8 +162,8 @@ func _test_rules_validate() -> void:
 		"every place would be reserved and nothing would ever be filled in"
 	)
 
-	var no_clock := DotVoteRules.new()
-	no_clock.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	var no_clock := GSVoteRules.new()
+	no_clock.trigger = GSVoteRules.Trigger.TIME_LIMIT
 	no_clock.duration_sec = 0.0
 	no_clock.rtv_enabled = false
 	_check(
@@ -172,8 +172,8 @@ func _test_rules_validate() -> void:
 		"nothing would ever open a vote, silently"
 	)
 
-	var around_the_clock := DotVoteRules.new()
-	around_the_clock.trigger = DotVoteRules.Trigger.TIME_LIMIT
+	var around_the_clock := GSVoteRules.new()
+	around_the_clock.trigger = GSVoteRules.Trigger.TIME_LIMIT
 	around_the_clock.duration_sec = 0.0
 	_check(
 		around_the_clock.validate().ok,
@@ -181,7 +181,7 @@ func _test_rules_validate() -> void:
 		str(around_the_clock.validate().error.message if not around_the_clock.validate().ok else "")
 	)
 
-	var early := DotVoteRules.new()
+	var early := GSVoteRules.new()
 	early.duration_sec = 120.0
 	early.vote_lead_sec = 180.0
 	_check(
@@ -190,7 +190,7 @@ func _test_rules_validate() -> void:
 		"the ballot would open the instant the map started"
 	)
 
-	var late_rtv := DotVoteRules.new()
+	var late_rtv := GSVoteRules.new()
 	late_rtv.duration_sec = 300.0
 	late_rtv.rtv_delay_sec = 600.0
 	_check(
@@ -199,8 +199,8 @@ func _test_rules_validate() -> void:
 		"rocking the vote would be refused for the whole of every map"
 	)
 
-	var dead := DotVoteRules.new()
-	dead.trigger = DotVoteRules.Trigger.RTV_ONLY
+	var dead := GSVoteRules.new()
+	dead.trigger = GSVoteRules.Trigger.RTV_ONLY
 	dead.rtv_enabled = false
 	_check(
 		not dead.validate().ok,
@@ -208,11 +208,11 @@ func _test_rules_validate() -> void:
 	)
 
 	_check(
-		DotVoteRules.new().summary_lines().size() >= 6,
+		GSVoteRules.new().summary_lines().size() >= 6,
 		"the rules summarise themselves for a console"
 	)
 	_check(
-		DotVoteRules.new().describe_lines().size() >= 40,
+		GSVoteRules.new().describe_lines().size() >= 40,
 		"and dump every key when asked in full"
 	)
 
@@ -226,7 +226,7 @@ func _test_history() -> void:
 	rules.cooldown = 2
 	rules.cooldown_max_fraction = 1.0
 
-	var history := DotVoteHistory.of(rules)
+	var history := GSVoteHistory.of(rules)
 	history.note_played(&"a", 0.0)
 	history.note_played(&"b", 0.0)
 	history.note_played(&"c", 0.0)
@@ -244,7 +244,7 @@ func _test_history() -> void:
 	deep.cooldown = 8
 	deep.cooldown_max_fraction = 0.5
 
-	var small := DotVoteHistory.of(deep)
+	var small := GSVoteHistory.of(deep)
 	for id in [&"a", &"b", &"c", &"d"]:
 		small.note_played(id, 0.0)
 
@@ -259,7 +259,7 @@ func _test_history() -> void:
 		"otherwise everything is on cooldown and the ballot is empty"
 	)
 
-	var per_choice := DotVoteChoice.of(&"d")
+	var per_choice := GSVoteChoice.of(&"d")
 	per_choice.cooldown_override = 0
 	_check(
 		not small.on_cooldown(&"d", 4, -1.0, per_choice),
@@ -267,10 +267,10 @@ func _test_history() -> void:
 	)
 
 	var minutes := _rules()
-	minutes.cooldown_mode = DotVoteRules.Cooldown.MINUTES
+	minutes.cooldown_mode = GSVoteRules.Cooldown.MINUTES
 	minutes.cooldown_minutes = 30.0
 
-	var timed := DotVoteHistory.of(minutes)
+	var timed := GSVoteHistory.of(minutes)
 	timed.note_played(&"m", 1000.0)
 
 	_check(timed.on_cooldown(&"m", 0, 1000.0), "a cooldown in minutes starts hot")
@@ -284,7 +284,7 @@ func _test_history() -> void:
 		"something never played is never on cooldown"
 	)
 
-	var saved := DotVoteHistory.of(rules)
+	var saved := GSVoteHistory.of(rules)
 	saved.from_dictionary(history.to_dictionary())
 	_check(
 		saved.plays_since(&"a") == 2 and saved.times_played(&"a") == 1,
@@ -301,14 +301,14 @@ func _test_quorum() -> void:
 	rules.include_extend = false
 	rules.quorum = 0.5
 
-	var ballot := DotVoteBallot.of(rules)
+	var ballot := GSVoteBallot.of(rules)
 	ballot.begin(_choices(["a", "b"]), 10)
 	ballot.cast_vote(&"v1", _one(&"a"))
 	ballot.cast_vote(&"v2", _one(&"a"))
 
 	var result := ballot.resolve()
 	_check(
-		result.outcome == DotVoteResult.Outcome.NO_QUORUM,
+		result.outcome == GSVoteResult.Outcome.NO_QUORUM,
 		"two of ten is not a quorum of half"
 	)
 	_check(
@@ -320,19 +320,19 @@ func _test_quorum() -> void:
 		"and the turnout is reported (%.0f%%)" % (result.turnout() * 100.0)
 	)
 
-	var met := DotVoteBallot.of(rules)
+	var met := GSVoteBallot.of(rules)
 	met.begin(_choices(["a", "b"]), 4)
 	met.cast_vote(&"v1", _one(&"a"))
 	met.cast_vote(&"v2", _one(&"a"))
 	_check(
-		met.resolve().outcome == DotVoteResult.Outcome.WINNER,
+		met.resolve().outcome == GSVoteResult.Outcome.WINNER,
 		"and half of four is"
 	)
 
-	var nobody := DotVoteBallot.of(rules)
+	var nobody := GSVoteBallot.of(rules)
 	nobody.begin(_choices(["a"]), 4)
 	_check(
-		nobody.resolve().outcome == DotVoteResult.Outcome.EMPTY,
+		nobody.resolve().outcome == GSVoteResult.Outcome.EMPTY,
 		"nobody voting at all is EMPTY rather than a quorum failure",
 		"an empty server is not a server that ignored a vote"
 	)
@@ -344,25 +344,25 @@ func _test_no_quorum_policies() -> void:
 	_section("What a server does when too few people voted, three ways")
 
 	for policy: Variant in [
-		DotVoteRules.NoQuorum.KEEP,
-		DotVoteRules.NoQuorum.WINNER_ANYWAY,
-		DotVoteRules.NoQuorum.ROTATION,
+		GSVoteRules.NoQuorum.KEEP,
+		GSVoteRules.NoQuorum.WINNER_ANYWAY,
+		GSVoteRules.NoQuorum.ROTATION,
 	]:
 		var applied := []
-		var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
-		source.apply_fn = func(id: StringName) -> DotResult:
+		var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
+		source.apply_fn = func(id: StringName) -> GSResult:
 			applied.append(id)
-			return DotResult.success(id)
+			return GSResult.success(id)
 
 		var rules := _rules()
 		rules.quorum = 0.9
-		rules.on_no_quorum = policy as DotVoteRules.NoQuorum
+		rules.on_no_quorum = policy as GSVoteRules.NoQuorum
 		rules.include_extend = false
 		rules.vote_duration_sec = 5.0
 		rules.duration_sec = 60.0
 		rules.vote_lead_sec = 0.0
 		rules.cooldown = 0
-		rules.apply = DotVoteRules.Apply.IMMEDIATE
+		rules.apply = GSVoteRules.Apply.IMMEDIATE
 
 		var director := _make_director(rules, source)
 		director.begin(&"a")
@@ -377,7 +377,7 @@ func _test_no_quorum_policies() -> void:
 			director.advance(1.0)
 
 		match policy:
-			DotVoteRules.NoQuorum.KEEP:
+			GSVoteRules.NoQuorum.KEEP:
 				_check(
 					applied.is_empty() and director.current_id() == &"a",
 					"KEEP stays where it is"
@@ -386,7 +386,7 @@ func _test_no_quorum_policies() -> void:
 					not director.clock.is_expired(),
 					"and restarts the clock, or the next tick opens another ballot"
 				)
-			DotVoteRules.NoQuorum.WINNER_ANYWAY:
+			GSVoteRules.NoQuorum.WINNER_ANYWAY:
 				_check(
 					applied.size() == 1 and applied[0] == &"c",
 					"WINNER_ANYWAY takes the leader (%s)" % str(applied)
@@ -409,7 +409,7 @@ func _test_score_limit() -> void:
 	_section("A score limit ends a choice the way a frag limit does, and extends")
 
 	var rules := _rules()
-	rules.trigger = DotVoteRules.Trigger.SCORE_LIMIT
+	rules.trigger = GSVoteRules.Trigger.SCORE_LIMIT
 	rules.duration_sec = 0.0
 	rules.score_limit = 30
 	rules.vote_lead_score = 5
@@ -417,7 +417,7 @@ func _test_score_limit() -> void:
 
 	_check(rules.validate().ok, "a score-limited server with no clock validates")
 
-	var clock := DotVoteClock.of(rules)
+	var clock := GSVoteClock.of(rules)
 	var due := []
 	var moved := []
 	clock.vote_due.connect(func(reason: StringName) -> void: due.append(reason))
@@ -429,7 +429,7 @@ func _test_score_limit() -> void:
 
 	clock.note_score(25)
 	_check(
-		due == [DotVoteClock.REASON_SCORE],
+		due == [GSVoteClock.REASON_SCORE],
 		"five short of the limit, the ballot is due, and says why"
 	)
 	_check(clock.note_score(30), "and reaching the limit ends it")
@@ -443,9 +443,9 @@ func _test_score_limit() -> void:
 	)
 	_check(clock.timeleft_line().contains("30 of 40"), "and reports it", clock.timeleft_line())
 
-	var source := DotVoteListSource.of(_choices(["a", "b"]))
+	var source := GSVoteListSource.of(_choices(["a", "b"]))
 	var director := _make_director(_rules(), source)
-	director.rules.trigger = DotVoteRules.Trigger.SCORE_LIMIT
+	director.rules.trigger = GSVoteRules.Trigger.SCORE_LIMIT
 	director.rules.duration_sec = 0.0
 	director.rules.score_limit = 20
 	director.rules.vote_lead_score = 2
@@ -468,7 +468,7 @@ func _test_lead_fraction() -> void:
 	rules.vote_lead_fraction = 0.3
 	rules.extend_seconds = 100.0
 
-	var clock := DotVoteClock.of(rules)
+	var clock := GSVoteClock.of(rules)
 	var due := []
 	clock.vote_due.connect(func(_r: StringName) -> void: due.append(1))
 	clock.start()
@@ -495,7 +495,7 @@ func _test_list_fn() -> void:
 	_section("A list read from the host when a ballot opens reaches maps delivered after boot")
 
 	var catalogue: Array = [["a", "Alpha"]]
-	var source := DotVoteListSource.new()
+	var source := GSVoteListSource.new()
 	source.entries_fn = func() -> Array: return catalogue
 	var director := _make_director(_manual_rules(), source)
 	director.begin(&"a")
@@ -503,16 +503,16 @@ func _test_list_fn() -> void:
 
 	_check(source.entries.size() == 1, "begin reads it: one map at boot")
 	_check(
-		not director.start_vote(DotVoteClock.REASON_MANUAL).ok and not director.is_voting(),
+		not director.start_vote(GSVoteClock.REASON_MANUAL).ok and not director.is_voting(),
 		"and one map is nothing to vote for"
 	)
 
 	catalogue.append(["b", "Bravo"])
-	catalogue.append(DotVoteChoice.of(&"c", "Charlie"))
+	catalogue.append(GSVoteChoice.of(&"c", "Charlie"))
 	catalogue.append(&"d")
 	catalogue.append(["b", "Bravo again"])
 
-	var opened := director.start_vote(DotVoteClock.REASON_MANUAL)
+	var opened := director.start_vote(GSVoteClock.REASON_MANUAL)
 	var ids := director.ballot.option_ids()
 
 	_check(
@@ -529,7 +529,7 @@ func _test_list_fn() -> void:
 	)
 
 	# A broken function keeps the list there was.
-	var broken := DotVoteListSource.of(_choices(["x", "y"]))
+	var broken := GSVoteListSource.of(_choices(["x", "y"]))
 	broken.entries_fn = func() -> Variant: return null
 	_check(
 		not broken.refresh().ok and broken.entries.size() == 2,
@@ -544,7 +544,7 @@ func _test_list_fn() -> void:
 	)
 
 	# Unset, a list is what it always was.
-	var plain := DotVoteListSource.of(_choices(["p", "q"]))
+	var plain := GSVoteListSource.of(_choices(["p", "q"]))
 	plain.before_ballot()
 	_check(
 		plain.entries.size() == 2 and not plain.refresh().ok,
@@ -561,36 +561,36 @@ func _test_single_voter_auto() -> void:
 	rules.duration_sec = 600.0
 	rules.vote_warning_sec = 0.0
 	rules.vote_cooldown_sec = 0.0
-	var director := _make_director(rules, DotVoteListSource.of(_choices(["a", "b", "c"])))
+	var director := _make_director(rules, GSVoteListSource.of(_choices(["a", "b", "c"])))
 	director.begin(&"a")
 
 	director.player_count_fn = func() -> int: return 1
-	director.start_vote(DotVoteClock.REASON_TIME)
+	director.start_vote(GSVoteClock.REASON_TIME)
 	_check(not director.is_voting(), "one human: the timed ballot is passed over")
 
 	# A loading or ghost peer is a player but not a voter.
 	director.player_count_fn = func() -> int: return 3
 	director.voters_fn = func() -> Array: return [&"p1"]
-	director.start_vote(DotVoteClock.REASON_TIME)
+	director.start_vote(GSVoteClock.REASON_TIME)
 	_check(not director.is_voting(), "three sessions, one voter: passed over")
 
 	director.player_count_fn = func() -> int: return 2
-	director.start_vote(DotVoteClock.REASON_RTV)
+	director.start_vote(GSVoteClock.REASON_RTV)
 	_check(not director.is_voting(), "a human and a bot: a passed rock-the-vote is passed over")
 
 	director.voters_fn = func() -> Array: return [&"p1", &"p2"]
-	director.start_vote(DotVoteClock.REASON_TIME)
+	director.start_vote(GSVoteClock.REASON_TIME)
 	_check(director.is_voting(), "two voters: it opens")
 	director.close_vote()
 
 	director.voters_fn = func() -> Array: return [&"p1"]
 	rules.allow_single_voter_auto = true
-	var again := director.start_vote(DotVoteClock.REASON_TIME)
+	var again := director.start_vote(GSVoteClock.REASON_TIME)
 	_check(director.is_voting(), "allow_single_voter_auto: a lone voter gets the ballot", str(again.error))
 	director.close_vote()
 
 	rules.allow_single_voter_auto = false
-	director.start_vote(DotVoteClock.REASON_MANUAL)
+	director.start_vote(GSVoteClock.REASON_MANUAL)
 	_check(director.is_voting(), "a manual vote by a lone voter still opens")
 	director.queue_free()
 
@@ -678,20 +678,20 @@ func _test_every_layer_reaches_a_ballot() -> void:
 func _test_end_vote_switch() -> void:
 	_section("The end-of-map vote is a switch, and off still ends the map")
 
-	for trigger: Variant in [DotVoteRules.Trigger.TIME_LIMIT, DotVoteRules.Trigger.RTV_ONLY]:
+	for trigger: Variant in [GSVoteRules.Trigger.TIME_LIMIT, GSVoteRules.Trigger.RTV_ONLY]:
 		var applied := []
-		var source := DotVoteListSource.of(_choices(["a", "b", "c"]))
-		source.apply_fn = func(id: StringName) -> DotResult:
+		var source := GSVoteListSource.of(_choices(["a", "b", "c"]))
+		source.apply_fn = func(id: StringName) -> GSResult:
 			applied.append(id)
-			return DotResult.success(id)
+			return GSResult.success(id)
 
 		var rules := _rules()
-		rules.trigger = trigger as DotVoteRules.Trigger
-		rules.end_vote = trigger != DotVoteRules.Trigger.TIME_LIMIT
+		rules.trigger = trigger as GSVoteRules.Trigger
+		rules.end_vote = trigger != GSVoteRules.Trigger.TIME_LIMIT
 		rules.duration_sec = 100.0
 		rules.vote_lead_sec = 20.0
 		rules.cooldown = 0
-		rules.apply = DotVoteRules.Apply.IMMEDIATE
+		rules.apply = GSVoteRules.Apply.IMMEDIATE
 
 		var director := _make_director(rules, source)
 		director.begin(&"a")
@@ -700,7 +700,7 @@ func _test_end_vote_switch() -> void:
 		for i in range(90):
 			director.advance(1.0)
 
-		var label := "end_vote off" if trigger == DotVoteRules.Trigger.TIME_LIMIT \
+		var label := "end_vote off" if trigger == GSVoteRules.Trigger.TIME_LIMIT \
 			else "rtv_only"
 
 		_check(
@@ -719,7 +719,7 @@ func _test_end_vote_switch() -> void:
 
 		director.queue_free()
 
-	var default_director := _make_director(_rules(), DotVoteListSource.of(_choices(["a"])))
+	var default_director := _make_director(_rules(), GSVoteListSource.of(_choices(["a"])))
 	_check(default_director.end_vote_enabled(), "and it is on by default")
 	default_director.queue_free()
 

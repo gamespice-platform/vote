@@ -1,11 +1,11 @@
-class_name DotVoteBallotView
+class_name GSVoteBallotView
 extends RefCounted
 
 ## A ballot as a player's screen draws it: options, counts, who voted for what, and how to choose.
-## The other half of [DotVoteClockView]: a dictionary a server makes from its director and a client draws from, with no wire format of its own. Fields: docs/design.md "A ballot a player can click".
-## Options are in [method DotVoteBallot.option_ids] order (what a typed number indexes), never [method DotVoteBallot.countable_ids]. A pure function of the director; logs nothing.
+## The other half of [GSVoteClockView]: a dictionary a server makes from its director and a client draws from, with no wire format of its own. Fields: docs/design.md "A ballot a player can click".
+## Options are in [method GSVoteBallot.option_ids] order (what a typed number indexes), never [method GSVoteBallot.countable_ids]. A pure function of the director; logs nothing.
 
-## Most options sent. [member DotVoteRules.max_options] is at most 32 already; this is what a
+## Most options sent. [member GSVoteRules.max_options] is at most 32 already; this is what a
 ## reader can rely on without trusting the writer.
 const MAX_OPTIONS := 32
 
@@ -20,7 +20,7 @@ const MAX_LABEL := 48
 
 ## The ballot [param director] has open, or a closed one when it has none.
 ## [param people_fn] answers [code]voter -> {"name", "avatar"}[/code] (the host's, since voter ids are the server's); optional.
-static func state_of(director: DotVoteDirector, people_fn: Callable = Callable()) -> Dictionary:
+static func state_of(director: GSVoteDirector, people_fn: Callable = Callable()) -> Dictionary:
 	if director == null or director.ballot == null or not director.ballot.open:
 		return {"open": false}
 
@@ -48,8 +48,8 @@ static func state_of(director: DotVoteDirector, people_fn: Callable = Callable()
 		"runoff": ballot.runoffs_held > 0,
 		"seconds": snappedf(director.vote_seconds_remaining(), 0.1),
 		"input": input_name(rules.ballot_input),
-		"multi": rules.method == DotVoteRules.Method.APPROVAL
-			or rules.method == DotVoteRules.Method.INSTANT_RUNOFF,
+		"multi": rules.method == GSVoteRules.Method.APPROVAL
+			or rules.method == GSVoteRules.Method.INSTANT_RUNOFF,
 		"options": options,
 	}
 
@@ -91,7 +91,7 @@ static func state_of(director: DotVoteDirector, people_fn: Callable = Callable()
 
 ## The closed state for [param result]: what won, for a client to show briefly before the
 ## ballot goes away.
-static func closed_state(director: DotVoteDirector, result: DotVoteResult) -> Dictionary:
+static func closed_state(director: GSVoteDirector, result: GSVoteResult) -> Dictionary:
 	var out := {"open": false}
 
 	if result == null:
@@ -103,18 +103,18 @@ static func closed_state(director: DotVoteDirector, result: DotVoteResult) -> Di
 			else String(result.winner_id)
 		).left(MAX_LABEL)
 
-	if result.outcome == DotVoteResult.Outcome.RUNOFF:
+	if result.outcome == GSVoteResult.Outcome.RUNOFF:
 		out["runoff_next"] = true
 
 	return out
 
 
-## The lower-case name of a [enum DotVoteRules.BallotInput], as the dictionary carries it.
+## The lower-case name of a [enum GSVoteRules.BallotInput], as the dictionary carries it.
 static func input_name(value: int) -> String:
 	match value:
-		DotVoteRules.BallotInput.NUMBERS:
+		GSVoteRules.BallotInput.NUMBERS:
 			return "numbers"
-		DotVoteRules.BallotInput.POINTER:
+		GSVoteRules.BallotInput.POINTER:
 			return "pointer"
 		_:
 			return "both"

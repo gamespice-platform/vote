@@ -1,20 +1,20 @@
-class_name DotVoteListSource
-extends DotVoteSource
+class_name GSVoteListSource
+extends GSVoteSource
 
 ## A source built from an explicit list, optionally loaded from JSON.
-## For choices that are the game's own business (modes, mutators, difficulties), and what every test here uses so it need not run against a real [DotGameManager].
-## Typical use: [code]source.add(DotVoteChoice.of(&"classic", "Classic"))[/code], then set [member apply_fn].
+## For choices that are the game's own business (modes, mutators, difficulties), and what every test here uses so it need not run against a real [GSGameManager].
+## Typical use: [code]source.add(GSVoteChoice.of(&"classic", "Classic"))[/code], then set [member apply_fn].
 
 const CHANNEL := "vote.list"
 
 ## The choices, in ballot order.
-var entries: Array[DotVoteChoice] = []
+var entries: Array[GSVoteChoice] = []
 
 ## What is running now. Set it yourself, or let [method apply] set it.
 var current: StringName = &""
 
-## What "play this" does: takes a [StringName], returns a [DotResult], may be a coroutine.
-## Unset means this source only lists, and [DotVoteDirector] emits [signal DotVoteDirector.change_due].
+## What "play this" does: takes a [StringName], returns a [GSResult], may be a coroutine.
+## Unset means this source only lists, and [GSVoteDirector] emits [signal GSVoteDirector.change_due].
 var apply_fn: Callable = Callable()
 
 ## A name for logs.
@@ -24,11 +24,11 @@ var label: String = "list"
 var loaded_from: String = ""
 
 ## [code]func() -> Array[/code]: the list as the host has it NOW, re-read into [member entries] when a choice begins and before every ballot.
-## Each item is a [DotVoteChoice], an [code][id, name][/code] pair, or a bare id. For a catalogue that grows after the director is built; unset, [member entries] is the list.
+## Each item is a [GSVoteChoice], an [code][id, name][/code] pair, or a bare id. For a catalogue that grows after the director is built; unset, [member entries] is the list.
 var entries_fn: Callable = Callable()
 
 ## The index [method follow_content] reads, or null.
-var content_index: DotContentIndex = null
+var content_index: GSContentIndex = null
 
 ## The [code]map_kind[/code]s [method follow_content] accepts; "*" is every kind, empty none.
 var content_kinds: PackedStringArray = PackedStringArray()
@@ -42,7 +42,7 @@ var in_rotation_fn: Callable = Callable()
 var rotation_order_fn: Callable = Callable()
 
 
-static func of(choices: Array[DotVoteChoice]) -> DotVoteListSource:
+static func of(choices: Array[GSVoteChoice]) -> GSVoteListSource:
 	# Not this class's own name. A script that names itself in an expression, loaded after
 	# its base, cuts Godot 4.7.2's exit teardown short and leaks every script loaded before
 	# it. See docs/gdscript-hazards.md, "A script that names itself".
@@ -52,11 +52,11 @@ static func of(choices: Array[DotVoteChoice]) -> DotVoteListSource:
 
 
 ## Builds one from ids alone, for a server whose choices need no configuration.
-static func of_ids(ids: Array) -> DotVoteListSource:
+static func of_ids(ids: Array) -> GSVoteListSource:
 	var source := new()
 
 	for id: Variant in ids:
-		source.entries.append(DotVoteChoice.of(StringName(str(id))))
+		source.entries.append(GSVoteChoice.of(StringName(str(id))))
 
 	return source
 
@@ -65,15 +65,15 @@ func source_name() -> String:
 	return label
 
 
-func choices() -> Array[DotVoteChoice]:
+func choices() -> Array[GSVoteChoice]:
 	return _through_rotation(_merged())
 
 
-func _merged() -> Array[DotVoteChoice]:
+func _merged() -> Array[GSVoteChoice]:
 	if content_index == null:
 		return entries
 
-	var out: Array[DotVoteChoice] = entries.duplicate()
+	var out: Array[GSVoteChoice] = entries.duplicate()
 	var seen := {}
 
 	for choice in entries:
@@ -95,11 +95,11 @@ func _merged() -> Array[DotVoteChoice]:
 
 
 ## The one filter and order every map source goes through, merged pack maps included.
-func _through_rotation(all: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
+func _through_rotation(all: Array[GSVoteChoice]) -> Array[GSVoteChoice]:
 	if not in_rotation_fn.is_valid() and not rotation_order_fn.is_valid():
 		return all
 
-	var kept: Array[DotVoteChoice] = []
+	var kept: Array[GSVoteChoice] = []
 
 	for choice in all:
 		if not in_rotation_fn.is_valid() or bool(in_rotation_fn.call(choice.id)):
@@ -113,7 +113,7 @@ func _through_rotation(all: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 	if not (written is Array):
 		return kept
 
-	var out: Array[DotVoteChoice] = []
+	var out: Array[GSVoteChoice] = []
 
 	for id: Variant in (written as Array):
 		for choice in kept:
@@ -128,8 +128,8 @@ func _through_rotation(all: Array[DotVoteChoice]) -> Array[DotVoteChoice]:
 
 
 ## Merges the maps subscribed packs provide into this list, for the index's current session only; opt-in.
-## Empty [param accepted_kinds] accepts none and "*" every [code]map_kind[/code], as [code]DotMapCatalogue.follow_content[/code]. The index is GameSpice Core's, so no GameSpice Map dependency.
-func follow_content(index: DotContentIndex, accepted_kinds: PackedStringArray = PackedStringArray()) -> void:
+## Empty [param accepted_kinds] accepts none and "*" every [code]map_kind[/code], as [code]GSMapCatalogue.follow_content[/code]. The index is GameSpice Core's, so no GameSpice Map dependency.
+func follow_content(index: GSContentIndex, accepted_kinds: PackedStringArray = PackedStringArray()) -> void:
 	content_index = index
 	content_kinds = accepted_kinds
 
@@ -140,14 +140,14 @@ func unfollow_content() -> void:
 	content_kinds = PackedStringArray()
 
 
-func _choice_from_entry(entry: DotContentEntry) -> DotVoteChoice:
+func _choice_from_entry(entry: GSContentEntry) -> GSVoteChoice:
 	var map_kind := str(entry.raw.get("map_kind", ""))
 
 	if entry.id == "" or map_kind == "" \
 			or not (content_kinds.has("*") or content_kinds.has(map_kind)):
 		return null
 
-	var choice := DotVoteChoice.of(StringName(entry.id), entry.name)
+	var choice := GSVoteChoice.of(StringName(entry.id), entry.name)
 	choice.pack_title = entry.pack_title
 	choice.group = StringName(map_kind)
 	choice.min_players = int(entry.raw.get("min_players", 0))
@@ -160,18 +160,18 @@ func current_id() -> StringName:
 	return current
 
 
-func add(choice: DotVoteChoice) -> DotResult:
+func add(choice: GSVoteChoice) -> GSResult:
 	if choice == null or choice.id == &"":
-		return DotResult.fail(DotError.CODE_INVALID, "A choice needs an id.")
+		return GSResult.fail(GSError.CODE_INVALID, "A choice needs an id.")
 
 	if _owns(choice.id):
-		return DotResult.fail(
-			DotError.CODE_STATE, "'%s' is already in the list." % choice.id
+		return GSResult.fail(
+			GSError.CODE_STATE, "'%s' is already in the list." % choice.id
 		)
 
 	entries.append(choice)
 
-	return DotResult.success(choice)
+	return GSResult.success(choice)
 
 
 func _owns(id: StringName) -> bool:
@@ -199,35 +199,35 @@ func before_ballot() -> void:
 ## Reads [member entries_fn] into [member entries]. Anything but an array keeps the list
 ## there was and says why; a list shorter than before is taken as it is, because a map
 ## an operator removed should leave the ballot.
-func refresh() -> DotResult:
+func refresh() -> GSResult:
 	if not entries_fn.is_valid():
-		return DotResult.fail(DotError.CODE_STATE, "This list is not read from anywhere.")
+		return GSResult.fail(GSError.CODE_STATE, "This list is not read from anywhere.")
 
 	var listed: Variant = entries_fn.call()
 
 	if not (listed is Array):
-		DotLog.warn(CHANNEL, "the list function returned no list; keeping the old one", {
+		GSLog.warn(CHANNEL, "the list function returned no list; keeping the old one", {
 			"source": label, "kept": entries.size(),
 		})
-		return DotResult.fail(
-			DotError.CODE_INVALID, "%s's list function did not return an array." % label
+		return GSResult.fail(
+			GSError.CODE_INVALID, "%s's list function did not return an array." % label
 		)
 
-	var read: Array[DotVoteChoice] = []
+	var read: Array[GSVoteChoice] = []
 	var seen := {}
 
 	for item: Variant in (listed as Array):
-		var choice: DotVoteChoice = null
+		var choice: GSVoteChoice = null
 
-		if item is DotVoteChoice:
-			choice = item as DotVoteChoice
+		if item is GSVoteChoice:
+			choice = item as GSVoteChoice
 		elif item is Array and not (item as Array).is_empty():
 			var row: Array = item
-			choice = DotVoteChoice.of(
+			choice = GSVoteChoice.of(
 				StringName(str(row[0])), str(row[1]) if row.size() > 1 else ""
 			)
 		elif item != null:
-			choice = DotVoteChoice.of(StringName(str(item)))
+			choice = GSVoteChoice.of(StringName(str(item)))
 
 		if choice == null or choice.id == &"" or seen.has(choice.id):
 			continue
@@ -236,23 +236,23 @@ func refresh() -> DotResult:
 		read.append(choice)
 
 	if read.size() != entries.size():
-		DotLog.debug(CHANNEL, "the list changed size", {
+		GSLog.debug(CHANNEL, "the list changed size", {
 			"source": label, "was": entries.size(), "now": read.size(),
 		})
 
 	entries = read
 
-	return DotResult.success(entries.size())
+	return GSResult.success(entries.size())
 
 
 func supports_apply() -> bool:
 	return apply_fn.is_valid()
 
 
-func apply(id: StringName) -> DotResult:
+func apply(id: StringName) -> GSResult:
 	if not has(id):
-		return DotResult.fail(
-			DotError.CODE_INVALID, "'%s' is not in the list." % id
+		return GSResult.fail(
+			GSError.CODE_INVALID, "'%s' is not in the list." % id
 		)
 
 	if not apply_fn.is_valid():
@@ -260,27 +260,27 @@ func apply(id: StringName) -> DotResult:
 
 	var result: Variant = await apply_fn.call(id)
 
-	if result is DotResult and not (result as DotResult).ok:
-		return result as DotResult
+	if result is GSResult and not (result as GSResult).ok:
+		return result as GSResult
 
 	current = id
 
-	return DotResult.success(id)
+	return GSResult.success(id)
 
 
 ## Reads a list of choices from a JSON file.
-## An array of [method DotVoteChoice.to_dictionary] dictionaries, or an object with a [code]"choices"[/code] key so a hand-written file can carry other fields.
-func load_json(path: String) -> DotResult:
+## An array of [method GSVoteChoice.to_dictionary] dictionaries, or an object with a [code]"choices"[/code] key so a hand-written file can carry other fields.
+func load_json(path: String) -> GSResult:
 	if not FileAccess.file_exists(path):
-		return DotResult.fail(
-			DotError.CODE_IO, "No choice list at %s." % path
+		return GSResult.fail(
+			GSError.CODE_IO, "No choice list at %s." % path
 		)
 
 	var text := FileAccess.get_file_as_string(path)
 
 	if text == "":
-		return DotResult.fail(
-			DotError.CODE_IO,
+		return GSResult.fail(
+			GSError.CODE_IO,
 			"Could not read %s." % path,
 			error_string(FileAccess.get_open_error())
 		)
@@ -292,8 +292,8 @@ func load_json(path: String) -> DotResult:
 		list = (parsed as Dictionary).get("choices", [])
 
 	if not (list is Array):
-		return DotResult.fail(
-			DotError.CODE_PARSE,
+		return GSResult.fail(
+			GSError.CODE_PARSE,
 			"%s is not a list of choices." % path,
 			"expected an array, or an object with a 'choices' array"
 		)
@@ -302,24 +302,24 @@ func load_json(path: String) -> DotResult:
 
 	for entry: Variant in (list as Array):
 		if entry is Dictionary:
-			entries.append(DotVoteChoice.from_dictionary(entry as Dictionary))
+			entries.append(GSVoteChoice.from_dictionary(entry as Dictionary))
 
 	loaded_from = path
 
-	DotLog.info(CHANNEL, "choices loaded", {"path": path, "count": entries.size()})
+	GSLog.info(CHANNEL, "choices loaded", {"path": path, "count": entries.size()})
 
-	return DotResult.success(entries.size())
+	return GSResult.success(entries.size())
 
 
 ## Reads the list again: [member entries_fn] when there is one, else the file
 ## [method load_json] last read. Nothing to do for a list that was built in code, and that
 ## is not an error.
-func reload() -> DotResult:
+func reload() -> GSResult:
 	if entries_fn.is_valid():
 		return refresh()
 
 	if loaded_from == "":
-		return DotResult.success(entries.size())
+		return GSResult.success(entries.size())
 
 	return load_json(loaded_from)
 
@@ -333,7 +333,7 @@ func to_json(pretty: bool = true) -> String:
 	return JSON.stringify({"choices": list}, "\t" if pretty else "")
 
 
-func save_json(path: String) -> DotResult:
+func save_json(path: String) -> GSResult:
 	var dir := path.get_base_dir()
 
 	if dir != "" and not DirAccess.dir_exists_absolute(dir):
@@ -342,8 +342,8 @@ func save_json(path: String) -> DotResult:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 
 	if file == null:
-		return DotResult.fail(
-			DotError.CODE_IO,
+		return GSResult.fail(
+			GSError.CODE_IO,
 			"Could not write %s." % path,
 			error_string(FileAccess.get_open_error())
 		)
@@ -351,6 +351,6 @@ func save_json(path: String) -> DotResult:
 	file.store_string(to_json())
 	file.close()
 
-	DotWeb.sync_filesystem()
+	GSWeb.sync_filesystem()
 
-	return DotResult.success(path)
+	return GSResult.success(path)

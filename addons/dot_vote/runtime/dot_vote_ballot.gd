@@ -1,11 +1,11 @@
-class_name DotVoteBallot
+class_name GSVoteBallot
 extends RefCounted
 
 ## The open ballot: what is on it, who voted for what, and who won.
 ## A ballot is an ordered list of ids, the one shape every counting method reads, so the wire never changes with the method.
-## Nothing here draws or counts down; [DotVoteDirector] joins it to players and a clock.
+## Nothing here draws or counts down; [GSVoteDirector] joins it to players and a clock.
 
-# No log channel: a tally and a rule. DotVoteDirector, which joins it to players and a
+# No log channel: a tally and a rule. GSVoteDirector, which joins it to players and a
 # clock, logs a vote opening and its result; a refused cast goes back to the voter.
 
 ## The pseudo-option for "keep this and add time to it".
@@ -20,10 +20,10 @@ const ABSTAIN := &"__abstain__"
 
 signal opened(options: Array)
 signal voted(voter: StringName, choices: Array)
-signal closed(result: DotVoteResult)
+signal closed(result: GSVoteResult)
 
 ## The choices on the ballot, in order. Nominations first.
-var options: Array[DotVoteChoice] = []
+var options: Array[GSVoteChoice] = []
 
 ## voter -> Array[StringName], in preference order.
 var ballots: Dictionary = {}
@@ -34,47 +34,47 @@ var weights: Dictionary = {}
 ## How many people could vote when the ballot opened.
 var eligible: int = 0
 
-## Runoffs already held for this decision. Bounded by [member DotVoteRules.max_runoffs].
+## Runoffs already held for this decision. Bounded by [member GSVoteRules.max_runoffs].
 var runoffs_held: int = 0
 
 var open: bool = false
 
-var rules: DotVoteRules = null
+var rules: GSVoteRules = null
 
-## Consulted only by [constant DotVoteRules.TieBreak.LEAST_RECENTLY_PLAYED]. Optional.
-var history: DotVoteHistory = null
+## Consulted only by [constant GSVoteRules.TieBreak.LEAST_RECENTLY_PLAYED]. Optional.
+var history: GSVoteHistory = null
 
-## Consulted only by [constant DotVoteRules.TieBreak.NOMINATION_ORDER]. Optional.
-var nominations: DotVoteNominations = null
+## Consulted only by [constant GSVoteRules.TieBreak.NOMINATION_ORDER]. Optional.
+var nominations: GSVoteNominations = null
 
-## Whether "extend" may be offered right now, set by [DotVoteDirector] from the clock.
+## Whether "extend" may be offered right now, set by [GSVoteDirector] from the clock.
 ## A ballot must not offer an option that does nothing if it wins.
 var extend_available: bool = true
 
 ## Whether this ballot was opened early — by rocking the vote — rather than by a limit
 ## running out. Decides whether "don't change" stands in for "extend"; see
-## [member DotVoteRules.early_vote_keep]. Survives a runoff, cleared by [method reset].
+## [member GSVoteRules.early_vote_keep]. Survives a runoff, cleared by [method reset].
 var early: bool = false
 
 
-static func of(p_rules: DotVoteRules) -> DotVoteBallot:
-	var ballot := DotVoteBallot.new()
+static func of(p_rules: GSVoteRules) -> GSVoteBallot:
+	var ballot := GSVoteBallot.new()
 	ballot.rules = p_rules
 	return ballot
 
 
 
 ## Opens a ballot over [param p_options].
-func begin(p_options: Array[DotVoteChoice], p_eligible: int) -> DotResult:
+func begin(p_options: Array[GSVoteChoice], p_eligible: int) -> GSResult:
 	if open:
-		return DotResult.fail(DotError.CODE_STATE, "A ballot is already open.")
+		return GSResult.fail(GSError.CODE_STATE, "A ballot is already open.")
 
 	if rules == null:
-		return DotResult.fail(DotError.CODE_STATE, "A ballot needs rules.")
+		return GSResult.fail(GSError.CODE_STATE, "A ballot needs rules.")
 
 	if p_options.is_empty() and not rules.include_extend and not rules.include_keep:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"There is nothing to vote on.",
 			"no options were offered and neither extend nor keep is on the ballot"
 		)
@@ -88,13 +88,13 @@ func begin(p_options: Array[DotVoteChoice], p_eligible: int) -> DotResult:
 
 	opened.emit(option_ids())
 
-	return DotResult.success(options)
+	return GSResult.success(options)
 
 
 ## Re-opens over the tied or leading options, keeping the runoff count.
 ## The ballots are cleared: a runoff asks a different question.
-func begin_runoff(ids: Array[StringName]) -> DotResult:
-	var kept: Array[DotVoteChoice] = []
+func begin_runoff(ids: Array[StringName]) -> GSResult:
+	var kept: Array[GSVoteChoice] = []
 
 	for choice in options:
 		if ids.has(choice.id):
@@ -118,7 +118,7 @@ func begin_runoff(ids: Array[StringName]) -> DotResult:
 	_runoff_extend = extend_in
 	_runoff_keep = keep_in
 
-	return DotResult.success(kept)
+	return GSResult.success(kept)
 
 
 ## Set while a runoff is running, to restrict the pseudo-options to those that tied.
@@ -200,7 +200,7 @@ func _pseudo_ids() -> Array[StringName]:
 	return out
 
 
-func find_option(id: StringName) -> DotVoteChoice:
+func find_option(id: StringName) -> GSVoteChoice:
 	for choice in options:
 		if choice.id == id:
 			return choice
@@ -219,16 +219,16 @@ func cast_vote(
 	voter: StringName,
 	choices: Array[StringName],
 	weight: float = 1.0
-) -> DotResult:
+) -> GSResult:
 	if not open:
-		return DotResult.fail(DotError.CODE_STATE, "There is no vote running.")
+		return GSResult.fail(GSError.CODE_STATE, "There is no vote running.")
 
 	if choices.is_empty():
-		return DotResult.fail(DotError.CODE_INVALID, "No choice was given.")
+		return GSResult.fail(GSError.CODE_INVALID, "No choice was given.")
 
 	if ballots.has(voter) and not rules.changeable_until_close:
-		return DotResult.fail(
-			DotError.CODE_STATE, "You have already voted."
+		return GSResult.fail(
+			GSError.CODE_STATE, "You have already voted."
 		)
 
 	if choices[0] == ABSTAIN and has_abstain():
@@ -236,15 +236,15 @@ func cast_vote(
 		ballots[voter] = [] as Array[StringName]
 		weights[voter] = weight
 		voted.emit(voter, [ABSTAIN])
-		return DotResult.success([] as Array[StringName])
+		return GSResult.success([] as Array[StringName])
 
 	var legal: Array[StringName] = []
 	var known := option_ids()
 
 	for id in choices:
 		if not known.has(id):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				"'%s' is not on the ballot." % id,
 				"on it: %s" % ", ".join(_as_strings(known))
 			)
@@ -257,10 +257,10 @@ func cast_vote(
 		legal.append(id)
 
 	match rules.method:
-		DotVoteRules.Method.APPROVAL:
+		GSVoteRules.Method.APPROVAL:
 			if rules.approval_max_choices > 0:
 				legal = legal.slice(0, rules.approval_max_choices)
-		DotVoteRules.Method.INSTANT_RUNOFF:
+		GSVoteRules.Method.INSTANT_RUNOFF:
 			pass
 		_:
 			# A ranked ballot sent to a server counting first preferences is read as its first
@@ -272,7 +272,7 @@ func cast_vote(
 
 	voted.emit(voter, legal)
 
-	return DotResult.success(legal)
+	return GSResult.success(legal)
 
 
 func withdraw(voter: StringName) -> bool:
@@ -336,7 +336,7 @@ func tally() -> Dictionary:
 	for id in countable_ids():
 		counts[id] = 0.0
 
-	var approval := rules != null and rules.method == DotVoteRules.Method.APPROVAL
+	var approval := rules != null and rules.method == GSVoteRules.Method.APPROVAL
 
 	for voter: Variant in ballots:
 		var choices: Array = ballots[voter]
@@ -355,8 +355,8 @@ func tally() -> Dictionary:
 
 
 ## Closes the ballot and decides it.
-func resolve() -> DotVoteResult:
-	var result := DotVoteResult.new()
+func resolve() -> GSVoteResult:
+	var result := GSVoteResult.new()
 
 	if not open:
 		result.summary = "There was no vote running."
@@ -383,7 +383,7 @@ func resolve() -> DotVoteResult:
 		# Distinguished from "too few voted": nobody at all voting is usually an empty
 		# server or a vote nobody was shown, and a quorum message about it is confusing.
 		# Everybody abstaining is the same answer — nobody chose anything.
-		result.outcome = DotVoteResult.Outcome.EMPTY
+		result.outcome = GSVoteResult.Outcome.EMPTY
 		result.summary = "Nobody voted." if ballots.is_empty() else "Everybody abstained."
 		closed.emit(result)
 		return result
@@ -396,7 +396,7 @@ func resolve() -> DotVoteResult:
 			# for a runoff, and a runoff nobody voted enough in is not the answer to
 			# "too few people voted".
 			var leader := _leader(counts, result)
-			result.outcome = DotVoteResult.Outcome.NO_QUORUM
+			result.outcome = GSVoteResult.Outcome.NO_QUORUM
 			result.winner_id = leader
 			result.winner = find_option(leader)
 			result.summary = "Not enough people voted (%d of %d, %d%% needed)." % [
@@ -406,9 +406,9 @@ func resolve() -> DotVoteResult:
 			return result
 
 	match rules.method:
-		DotVoteRules.Method.INSTANT_RUNOFF:
+		GSVoteRules.Method.INSTANT_RUNOFF:
 			_resolve_instant_runoff(result)
-		DotVoteRules.Method.MAJORITY_RUNOFF:
+		GSVoteRules.Method.MAJORITY_RUNOFF:
 			_resolve_majority(result, counts)
 		_:
 			_settle(result, _leader(counts, result), counts)
@@ -427,10 +427,10 @@ func _total(counts: Dictionary) -> float:
 	return sum
 
 
-func _resolve_majority(result: DotVoteResult, counts: Dictionary) -> void:
+func _resolve_majority(result: GSVoteResult, counts: Dictionary) -> void:
 	var leader := _leader(counts, result)
 
-	if result.outcome == DotVoteResult.Outcome.RUNOFF:
+	if result.outcome == GSVoteResult.Outcome.RUNOFF:
 		_settle(result, leader, counts)
 		return
 
@@ -458,7 +458,7 @@ func _resolve_majority(result: DotVoteResult, counts: Dictionary) -> void:
 	):
 		take += 1
 
-	result.outcome = DotVoteResult.Outcome.RUNOFF
+	result.outcome = GSVoteResult.Outcome.RUNOFF
 	result.runoff_ids = ordered.slice(0, take)
 	result.summary = "No majority — a runoff between %s." % ", ".join(
 		_as_strings(result.runoff_ids)
@@ -467,7 +467,7 @@ func _resolve_majority(result: DotVoteResult, counts: Dictionary) -> void:
 
 ## Eliminates the last-placed choice until something has a majority.
 ## Ties for last are eliminated in reverse ballot order, the mirror of the winner tie-break.
-func _resolve_instant_runoff(result: DotVoteResult) -> void:
+func _resolve_instant_runoff(result: GSVoteResult) -> void:
 	var remaining := countable_ids()
 	var counts := {}
 
@@ -534,36 +534,36 @@ func _last_placed(counts: Dictionary, remaining: Array[StringName]) -> StringNam
 
 
 ## Turns a winning id into an outcome, applying the extend and keep rules.
-func _settle(result: DotVoteResult, winner_id: StringName, counts: Dictionary) -> void:
+func _settle(result: GSVoteResult, winner_id: StringName, counts: Dictionary) -> void:
 	result.counts = result.counts if not result.counts.is_empty() else counts
 
 	# A tie-break of RUNOFF has already decided the outcome, and settling on top of it
 	# would announce a winner the server is about to hold another vote about. The id it
 	# returned is only the placeholder leader; the runoff is the answer.
-	if result.outcome == DotVoteResult.Outcome.RUNOFF:
+	if result.outcome == GSVoteResult.Outcome.RUNOFF:
 		result.summary = "A tie — a runoff between %s." % ", ".join(
 			_as_strings(result.runoff_ids)
 		)
 		return
 
 	if winner_id == EXTEND:
-		result.outcome = DotVoteResult.Outcome.EXTEND
+		result.outcome = GSVoteResult.Outcome.EXTEND
 		result.winner_id = EXTEND
 		result.summary = "The players voted to extend."
 		return
 
 	if winner_id == KEEP:
-		result.outcome = DotVoteResult.Outcome.KEEP
+		result.outcome = GSVoteResult.Outcome.KEEP
 		result.winner_id = KEEP
 		result.summary = "The players voted to stay."
 		return
 
 	if winner_id == &"":
-		result.outcome = DotVoteResult.Outcome.EMPTY
+		result.outcome = GSVoteResult.Outcome.EMPTY
 		result.summary = "The vote decided nothing."
 		return
 
-	result.outcome = DotVoteResult.Outcome.WINNER
+	result.outcome = GSVoteResult.Outcome.WINNER
 	result.winner_id = winner_id
 	result.winner = find_option(winner_id)
 
@@ -586,7 +586,7 @@ static func _format_votes(votes: float) -> String:
 
 ## The leading id, with ties broken by the configured rule.
 ## Records the tie-break on [param result] so the announcement can say why.
-func _leader(counts: Dictionary, result: DotVoteResult) -> StringName:
+func _leader(counts: Dictionary, result: GSVoteResult) -> StringName:
 	var best := -INF
 	var tied: Array[StringName] = []
 
@@ -624,9 +624,9 @@ func _leader(counts: Dictionary, result: DotVoteResult) -> StringName:
 	return _break_tie(tied, result)
 
 
-func _break_tie(tied: Array[StringName], result: DotVoteResult) -> StringName:
+func _break_tie(tied: Array[StringName], result: GSVoteResult) -> StringName:
 	match rules.tie_break:
-		DotVoteRules.TieBreak.NOMINATION_ORDER:
+		GSVoteRules.TieBreak.NOMINATION_ORDER:
 			if nominations != null:
 				result.tie_break = "nominated first"
 				return _min_by(tied, func(id: StringName) -> int:
@@ -636,7 +636,7 @@ func _break_tie(tied: Array[StringName], result: DotVoteResult) -> StringName:
 			result.tie_break = "first on the ballot"
 			return tied[0]
 
-		DotVoteRules.TieBreak.LEAST_RECENTLY_PLAYED:
+		GSVoteRules.TieBreak.LEAST_RECENTLY_PLAYED:
 			if history != null:
 				result.tie_break = "longest unplayed"
 				# plays_since is -1 for "never played", which must sort best rather than
@@ -649,22 +649,22 @@ func _break_tie(tied: Array[StringName], result: DotVoteResult) -> StringName:
 			result.tie_break = "first on the ballot"
 			return tied[0]
 
-		DotVoteRules.TieBreak.RANDOM:
+		GSVoteRules.TieBreak.RANDOM:
 			result.tie_break = "drawn"
 			var rng := RandomNumberGenerator.new()
 			rng.seed = rules.tie_break_seed
 			var picked := tied[rng.randi_range(0, tied.size() - 1)]
 			# Advanced deterministically rather than reseeded from the clock, so a
 			# client following the same ballots reaches the same answer — the reason
-			# DotMapRotation advances its seed the same way.
+			# GSMapRotation advances its seed the same way.
 			rules.tie_break_seed = int(
 				hash(String(picked)) ^ (rules.tie_break_seed * 1103515245 + 12345)
 			) & 0x7FFFFFFF
 			return picked
 
-		DotVoteRules.TieBreak.RUNOFF:
+		GSVoteRules.TieBreak.RUNOFF:
 			if runoffs_held < rules.max_runoffs:
-				result.outcome = DotVoteResult.Outcome.RUNOFF
+				result.outcome = GSVoteResult.Outcome.RUNOFF
 				result.runoff_ids = tied.duplicate()
 				result.tie_break = "runoff"
 				return tied[0]

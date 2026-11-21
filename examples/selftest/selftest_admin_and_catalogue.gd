@@ -2,24 +2,24 @@ extends "res://examples/selftest/selftest_settings_audit.gd"
 
 ## Selftest sections: admin commands, the real game manager and the map catalogue.
 
-var _v_admin_and_queries_director: DotVoteDirector
+var _v_admin_and_queries_director: GSVoteDirector
 var _v_admin_and_queries_removed: Array
 var _v_real_game_manager_server: Node
 var _v_real_game_manager_descriptor_script: GDScript
 var _v_real_game_manager_games: Object
-var _v_real_game_manager_source: DotVoteGameSource
-var _v_real_game_manager_director: DotVoteDirector
+var _v_real_game_manager_source: GSVoteGameSource
+var _v_real_game_manager_director: GSVoteDirector
 var _v_real_map_catalogue_catalogue: Object
 var _v_real_map_catalogue_session: Node
-var _v_real_map_catalogue_source: DotVoteMapSource
-var _v_real_map_catalogue_rules: DotVoteRules
-var _v_real_map_catalogue_director: DotVoteDirector
+var _v_real_map_catalogue_source: GSVoteMapSource
+var _v_real_map_catalogue_rules: GSVoteRules
+var _v_real_map_catalogue_director: GSVoteDirector
 
 
 func _test_admin_and_queries() -> void:
 	_section("Admins set, force and remove; everything can be asked")
 
-	var source := DotVoteListSource.of(_choices(["a", "b", "c", "d", "e"]))
+	var source := GSVoteListSource.of(_choices(["a", "b", "c", "d", "e"]))
 	var rules := _rules()
 	rules.include_extend = false
 	rules.nomination_slots = 0
@@ -47,7 +47,7 @@ func _test_admin_and_queries() -> void:
 		_v_admin_and_queries_director.excluded_ids().has(&"b"),
 		"and what is excluded for having been played can be asked"
 	)
-	_check(_v_admin_and_queries_director.nomination_state() == DotVoteDirector.NominationState.YES, "nominating is open")
+	_check(_v_admin_and_queries_director.nomination_state() == GSVoteDirector.NominationState.YES, "nominating is open")
 
 	_v_admin_and_queries_director.nominate(&"p1", &"c")
 	_v_admin_and_queries_director.nominate(&"p1", &"d")
@@ -85,7 +85,7 @@ func _test_admin_and_queries_2() -> void:
 
 	_v_admin_and_queries_director.rules.nominations_enabled = false
 	_check(
-		_v_admin_and_queries_director.nomination_state() == DotVoteDirector.NominationState.DISABLED,
+		_v_admin_and_queries_director.nomination_state() == GSVoteDirector.NominationState.DISABLED,
 		"nominations turned off say so"
 	)
 	_check(
@@ -140,7 +140,7 @@ func _test_admin_and_queries_3() -> void:
 	# round's ballot once, so the server's game vote on screen cost that round its ballot.
 	busy[0] = true
 	_v_admin_and_queries_director._cooldown_remaining = 0.0
-	var asked := _v_admin_and_queries_director.start_vote(DotVoteClock.REASON_MANUAL)
+	var asked := _v_admin_and_queries_director.start_vote(GSVoteClock.REASON_MANUAL)
 	_v_admin_and_queries_director.advance(0.5)
 	_check(
 		not asked.ok and not _v_admin_and_queries_director.is_voting() and not _v_admin_and_queries_director.is_counting_down(),
@@ -157,7 +157,7 @@ func _test_admin_and_queries_3() -> void:
 	if _v_admin_and_queries_director.is_voting():
 		_v_admin_and_queries_director.close_vote()
 
-	var picked := _v_admin_and_queries_director.open_vote(DotVoteClock.REASON_MANUAL, [&"c", &"e", &"nonsense"] as Array[StringName])
+	var picked := _v_admin_and_queries_director.open_vote(GSVoteClock.REASON_MANUAL, [&"c", &"e", &"nonsense"] as Array[StringName])
 	_check(
 		picked.ok and _v_admin_and_queries_director.ballot.option_ids() == ([&"c", &"e"] as Array[StringName]),
 		"an admin can hand-pick a ballot, and an unknown id is dropped rather than fatal"
@@ -175,25 +175,25 @@ func _test_admin_and_queries_4() -> void:
 		"which counts as the end-of-map vote having finished"
 	)
 	_check(
-		_v_admin_and_queries_director.nomination_state() == DotVoteDirector.NominationState.VOTE_COMPLETE,
+		_v_admin_and_queries_director.nomination_state() == GSVoteDirector.NominationState.VOTE_COMPLETE,
 		"and closes nominations, which could no longer reach any ballot"
 	)
 	_check(
-		_v_admin_and_queries_director.start_vote(DotVoteClock.REASON_MANUAL, true).ok and _v_admin_and_queries_director.is_voting(),
+		_v_admin_and_queries_director.start_vote(GSVoteClock.REASON_MANUAL, true).ok and _v_admin_and_queries_director.is_voting(),
 		"an admin's forced vote replaces the decision"
 	)
 	_v_admin_and_queries_director.close_vote()
 
 	# A list read from a file re-reads it on request.
 	var path := DATA.path_join("choices.json")
-	var listed := DotVoteListSource.of(_choices(["x", "y"]))
+	var listed := GSVoteListSource.of(_choices(["x", "y"]))
 	listed.save_json(path)
 
-	var reloading := DotVoteListSource.new()
+	var reloading := GSVoteListSource.new()
 	reloading.load_json(path)
 	var reloader := _make_director(_rules(), reloading)
 
-	DotVoteListSource.of(_choices(["x", "y", "z"])).save_json(path)
+	GSVoteListSource.of(_choices(["x", "y", "z"])).save_json(path)
 	_check(
 		reloader.reload().ok and reloading.choices().size() == 3,
 		"an operator edits the list on disk and the reload reads it (%d)"
@@ -202,11 +202,11 @@ func _test_admin_and_queries_4() -> void:
 
 	var full_rules := _rules()
 	full_rules.nominations_max = 1
-	var full := _make_director(full_rules, DotVoteListSource.of(_choices(["a", "b", "c"])))
+	var full := _make_director(full_rules, GSVoteListSource.of(_choices(["a", "b", "c"])))
 	full.begin(&"a")
 	full.nominate(&"p1", &"b")
 	_check(
-		full.nomination_state() == DotVoteDirector.NominationState.FULL,
+		full.nomination_state() == GSVoteDirector.NominationState.FULL,
 		"and a full list says it is full"
 	)
 
@@ -217,7 +217,7 @@ func _test_admin_and_queries_4() -> void:
 
 
 ## A real GameSpice Server game manager, voted over and actually changed.
-## Objects are built reflectively, the path [DotVoteGameSource] takes, so wrong duck typing fails here.
+## Objects are built reflectively, the path [GSVoteGameSource] takes, so wrong duck typing fails here.
 func _test_real_game_manager() -> void:
 	_section("A real dot-server game manager, voted over and actually changed")
 
@@ -261,7 +261,7 @@ func _test_real_game_manager() -> void:
 	var booted: Variant = await _v_real_game_manager_server.call("boot")
 
 	if not _check(
-		booted is DotResult and (booted as DotResult).ok,
+		booted is GSResult and (booted as GSResult).ok,
 		"the server boots",
 		str(booted)
 	):
@@ -291,15 +291,15 @@ func _test_real_game_manager_2() -> void:
 
 	var loaded: Variant = await _v_real_game_manager_games.call("change_game", "world_a", "boot")
 	_check(
-		loaded is DotResult and (loaded as DotResult).ok,
+		loaded is GSResult and (loaded as GSResult).ok,
 		"and loads a game",
 		str(loaded)
 	)
 
 	# The real server's hibernation, followed through its signal and switched by its cvar.
-	var follower := _make_director(_rules(), DotVoteListSource.of(_choices(["a", "b"])))
+	var follower := _make_director(_rules(), GSVoteListSource.of(_choices(["a", "b"])))
 	follower.begin(&"a")
-	_check(follower.follow_hibernation(_v_real_game_manager_server), "a real DotServer's hibernation can be followed")
+	_check(follower.follow_hibernation(_v_real_game_manager_server), "a real GSServer's hibernation can be followed")
 	_check(not follower.hibernating, "and this one, booted with it off, is awake")
 	_v_real_game_manager_server.get("console").call("execute", "sv_hibernate_when_empty 1")
 	_check(follower.hibernating, "sv_hibernate_when_empty 1 on the empty server puts the vote's clock to sleep")
@@ -307,7 +307,7 @@ func _test_real_game_manager_2() -> void:
 	_check(not follower.hibernating, "and 0 wakes it")
 	follower.queue_free()
 
-	_v_real_game_manager_source = DotVoteGameSource.of(_v_real_game_manager_games)
+	_v_real_game_manager_source = GSVoteGameSource.of(_v_real_game_manager_games)
 
 	_check(_v_real_game_manager_source.is_usable(), "the game source recognises a real game manager")
 	_check(_v_real_game_manager_source.choices().size() == 2, "and reads both games out of it")
@@ -331,7 +331,7 @@ func _test_real_game_manager_2() -> void:
 		"and the descriptor itself rides along, so a host need not look it up again"
 	)
 
-	var excluding := DotVoteGameSource.of(_v_real_game_manager_games)
+	var excluding := GSVoteGameSource.of(_v_real_game_manager_games)
 	excluding.excluded = [&"world_a"] as Array[StringName]
 	_check(
 		excluding.choices().size() == 1,
@@ -352,7 +352,7 @@ func _test_real_game_manager_3() -> void:
 	# Held until the clock runs out, so `apply_pending` below is what drives the real
 	# `change_game` — which is a coroutine, and awaiting one through Object.call is
 	# the assumption this whole integration rests on.
-	rules.apply = DotVoteRules.Apply.END_OF_TIME
+	rules.apply = GSVoteRules.Apply.END_OF_TIME
 
 	_v_real_game_manager_director = _make_director(rules, _v_real_game_manager_source)
 	_v_real_game_manager_director.begin(&"world_a")
@@ -376,7 +376,7 @@ func _test_real_game_manager_3() -> void:
 
 	_check(_v_real_game_manager_director.pending_id() == &"world_b", "and wins")
 
-	var applied: DotResult = await _v_real_game_manager_director.apply_pending()
+	var applied: GSResult = await _v_real_game_manager_director.apply_pending()
 
 	_check(applied.ok, "the change goes through a real change_game", str(applied.error))
 	_check(
@@ -397,7 +397,7 @@ func _test_real_game_manager_3() -> void:
 
 	# The running game's metadata, found through the registry. Wrong duck typing returns an
 	# empty dictionary, which looks like a game with nothing configured.
-	var running := DotVoteGameSource.running_game_metadata("vote")
+	var running := GSVoteGameSource.running_game_metadata("vote")
 	_check(
 		int(running.get("time_limit_sec", 0)) == 60,
 		"a game can read its own metadata off the running descriptor (%s)" % str(running),
@@ -411,7 +411,7 @@ func _test_real_game_manager_4() -> void:
 	# The console and chat commands, on the real console this server booted with.
 	var replies := PackedStringArray()
 	var console: Object = _v_real_game_manager_server.get("console")
-	var commands := DotVoteCommands.install(console, _v_real_game_manager_director)
+	var commands := GSVoteCommands.install(console, _v_real_game_manager_director)
 
 	_check(
 		commands.registered.size() >= 12,
@@ -510,7 +510,7 @@ func _test_real_map_catalogue() -> void:
 	_v_real_map_catalogue_session = session_script.new()
 	_v_real_map_catalogue_session.name = "Maps"
 	_v_real_map_catalogue_session.set("catalogue", _v_real_map_catalogue_catalogue)
-	_v_real_map_catalogue_session.set("world_ref", DotNodeRef.of_created(&"World", Node))
+	_v_real_map_catalogue_session.set("world_ref", GSNodeRef.of_created(&"World", Node))
 	add_child(_v_real_map_catalogue_session)
 	await get_tree().process_frame
 
@@ -521,12 +521,12 @@ func _test_real_map_catalogue() -> void:
 
 	var first: Variant = await _v_real_map_catalogue_session.call("change_to", &"map_one")
 	_check(
-		first is DotResult and (first as DotResult).ok,
+		first is GSResult and (first as GSResult).ok,
 		"a real map loads",
 		str(first)
 	)
 
-	_v_real_map_catalogue_source = DotVoteMapSource.of(_v_real_map_catalogue_catalogue, _v_real_map_catalogue_session)
+	_v_real_map_catalogue_source = GSVoteMapSource.of(_v_real_map_catalogue_catalogue, _v_real_map_catalogue_session)
 
 	await _test_real_map_catalogue_2()
 
@@ -553,7 +553,7 @@ func _test_real_map_catalogue_2() -> void:
 	)
 
 	# maps.yml: a map outside the active rotation is installed but never on a ballot or a
-	# nomination (the source reads DotMapDef.in_rotation, duck-typed).
+	# nomination (the source reads GSMapDef.in_rotation, duck-typed).
 	var off_map: Variant = _v_real_map_catalogue_catalogue.call("get_map", &"map_two")
 	off_map.set("in_rotation", false)
 	_check(
@@ -562,7 +562,7 @@ func _test_real_map_catalogue_2() -> void:
 	)
 	off_map.set("in_rotation", true)
 
-	var surf_only := DotVoteMapSource.of(_v_real_map_catalogue_catalogue, _v_real_map_catalogue_session)
+	var surf_only := GSVoteMapSource.of(_v_real_map_catalogue_catalogue, _v_real_map_catalogue_session)
 	surf_only.kinds = [&"surf"] as Array[StringName]
 	_check(
 		surf_only.choices().size() == 1,
@@ -595,7 +595,7 @@ func _test_real_map_catalogue_3() -> void:
 	_v_real_map_catalogue_director.cast_one(&"p1", &"map_two")
 	_v_real_map_catalogue_director.close_vote()
 
-	var applied: DotResult = await _v_real_map_catalogue_director.apply_pending()
+	var applied: GSResult = await _v_real_map_catalogue_director.apply_pending()
 
 	_check(applied.ok, "the change goes through a real change_to", str(applied.error))
 	_check(
@@ -611,7 +611,7 @@ func _test_real_map_catalogue_3() -> void:
 
 	# Nobody on the server, hibernation off, and the limit runs out: the session moves to
 	# the other map on its own, through the same real change_to a vote uses.
-	var nobody := DotVoteRules.new()
+	var nobody := GSVoteRules.new()
 	nobody.apply_delay_sec = 0.0
 	nobody.duration_sec = 60.0
 	nobody.vote_lead_sec = 10.0
@@ -632,7 +632,7 @@ func _test_real_map_catalogue_3() -> void:
 	)
 	empty_director.queue_free()
 
-	var listing_only := DotVoteMapSource.of(_v_real_map_catalogue_catalogue)
+	var listing_only := GSVoteMapSource.of(_v_real_map_catalogue_catalogue)
 	_check(
 		not listing_only.supports_apply(),
 		"a source with no session lists and changes nothing"
@@ -651,13 +651,13 @@ func _test_real_map_catalogue_3() -> void:
 
 ## The command-resolution half of the real game manager section, split out for size.
 func _real_game_manager_commands(
-	console: Object, director: DotVoteDirector, source: DotVoteGameSource,
+	console: Object, director: GSVoteDirector, source: GSVoteGameSource,
 	ctx_script: GDScript, ctx: Object, replies: PackedStringArray,
-	commands: DotVoteCommands
+	commands: GSVoteCommands
 ) -> void:
 	# What a player types is resolved before it reaches the director. FC's ids carry a
 	# `map:` prefix nobody types; without resolve_fn a bare name is an id nothing has.
-	var resolving := DotVoteCommands.new()
+	var resolving := GSVoteCommands.new()
 	resolving.director = director
 	resolving.prefix = "t_"
 	resolving.resolve_fn = func(text: String) -> StringName:
@@ -676,7 +676,7 @@ func _real_game_manager_commands(
 		"without it `a` is an id no source has, and the command refuses what a player typed"
 	)
 
-	var renamed := DotVoteCommands.new()
+	var renamed := GSVoteCommands.new()
 	renamed.director = director
 	renamed.prefix = "sv_"
 	renamed.names = {"rtv": "rockthevote"}
@@ -687,7 +687,7 @@ func _real_game_manager_commands(
 	)
 
 	# Aliases, a file-supplied block, and a collision that is a skip and never a steal.
-	var aliased := DotVoteCommands.new()
+	var aliased := GSVoteCommands.new()
 	aliased.director = director
 	aliased.prefix = "al_"
 	aliased.names = {"rtv": ["rockthevote", "rock"]}
@@ -705,7 +705,7 @@ func _real_game_manager_commands(
 		"help shows the first name behind the first chat prefix (%s)" % aliased.typed("rtv"))
 	_check(Array(aliased.describe()["aliases"]["rtv"]) == ["al_rock"], "describe lists the aliases")
 
-	var clashing := DotVoteCommands.new()
+	var clashing := GSVoteCommands.new()
 	clashing.director = director
 	clashing.prefix = "al_"
 	clashing.names = {"rtv": "rock", "nominate": ["nom", "sv_rtv"]}
@@ -717,7 +717,7 @@ func _real_game_manager_commands(
 		"while its alias beside the clash still registers")
 
 	# The map menu takes a rename, aliases and the collision check like the rest.
-	var menu_named := DotVoteCommands.new()
+	var menu_named := GSVoteCommands.new()
 	menu_named.director = director
 	menu_named.prefix = "mm_"
 	menu_named.names = {"mapmenu": ["menu", "mm"]}
@@ -725,7 +725,7 @@ func _real_game_manager_commands(
 	_check(console.call("find_command", "mm_menu") != null and console.call("find_command", "mm_mm") != null
 			and console.call("find_command", "mm_mapmenu") == null,
 		"mapmenu answers to its configured name and alias")
-	var menu_clash := DotVoteCommands.new()
+	var menu_clash := GSVoteCommands.new()
 	menu_clash.director = director
 	menu_clash.prefix = "mm_"
 	menu_clash.names = {"mapmenu": ["menu"]}
@@ -740,14 +740,14 @@ func _real_game_manager_commands(
 	keep_rules.include_keep = true
 	keep_rules.include_extend = false
 	keep_rules.close_when_all_voted = false
-	var keeper := _make_director(keep_rules, DotVoteListSource.of(_choices(["a", "b", "c"])))
+	var keeper := _make_director(keep_rules, GSVoteListSource.of(_choices(["a", "b", "c"])))
 	keeper.begin(&"c")
 	keeper.start_vote()
-	var keep_commands := DotVoteCommands.new()
+	var keep_commands := GSVoteCommands.new()
 	keep_commands.director = keeper
 	keep_commands.prefix = "k_"
 	keep_commands.bind(console)
-	var keep_at := keeper.ballot.option_ids().find(DotVoteBallot.KEEP) if keeper.is_voting() else -1
+	var keep_at := keeper.ballot.option_ids().find(GSVoteBallot.KEEP) if keeper.is_voting() else -1
 	replies.clear()
 	console.call("execute", "k_votefor %d" % (keep_at + 1), ctx)
 	var keep_reply := replies[0] if not replies.is_empty() else "nothing"
@@ -762,9 +762,9 @@ func _real_game_manager_commands(
 	# came back as 'Nominated hungry_classic.' under 'u1 nominated Hungario: Classic.'.
 	var nom_rules := _rules()
 	nom_rules.include_extend = false
-	var nominee := _make_director(nom_rules, DotVoteListSource.of(_choices(["big_bowl", "small_bowl", "x"])))
+	var nominee := _make_director(nom_rules, GSVoteListSource.of(_choices(["big_bowl", "small_bowl", "x"])))
 	nominee.begin(&"x")
-	var nom_commands := DotVoteCommands.new()
+	var nom_commands := GSVoteCommands.new()
 	nom_commands.director = nominee
 	nom_commands.prefix = "n_"
 	nom_commands.bind(console)
